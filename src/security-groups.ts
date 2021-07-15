@@ -7,6 +7,7 @@ export const allowFromV6 = [
 
 export const allowFromV4 = [
     '210.10.212.154/32', // gabo rd
+    '202.41.193.62/32', // herdsman pde
 ]
 
 export class SecurityGroups extends pulumi.ComponentResource {
