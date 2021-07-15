@@ -19,7 +19,7 @@ const securityGroups = new SecurityGroups('security-groups', {
     vpcId,
 })
 
-const jumpbox = new JumpBox('home-jumpbox', {
+const { ip, ipv6 } = new JumpBox('home-jumpbox', {
     publicSubnetIds,
     vpcId,
     securityGroups: [
@@ -28,4 +28,9 @@ const jumpbox = new JumpBox('home-jumpbox', {
         securityGroups.essentialIcmpSecurityGroup.id,
     ],
 })
+
+export const jumpbox = {
+    ip,
+    ipv6,
+}
 
