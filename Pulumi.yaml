@@ -1,0 +1,5 @@
+name: home-stuff
+runtime: nodejs
+description: Bennett's home infrastructure
+backend:
+  url: s3://home-stuff-bennettp123
