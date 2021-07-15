@@ -1,5 +1,6 @@
 {
     "name": "home-stuff",
+    "main": "src/index.ts",
     "devDependencies": {
         "@types/node": "^10.0.0"
     },

@@ -1,8 +1,8 @@
-import './src/pulumi-state'
+import './pulumi-state'
 
-import { JumpBox } from './src/jumpbox'
-import { Vpc } from './src/vpc'
-import { SecurityGroups } from './src/security-groups'
+import { JumpBox } from './jumpbox'
+import { Vpc } from './vpc'
+import { SecurityGroups } from './security-groups'
 
 const {
     publicSubnetIds,
