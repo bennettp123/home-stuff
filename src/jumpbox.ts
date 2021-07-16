@@ -141,12 +141,14 @@ export class JumpBox extends pulumi.ComponentResource {
             { parent: this },
         )
 
+        const tenyears = 10 * 365 * 24 * 60 * 60 * 1000
+
         // the smollest possible instance type
-        const instance = new aws.ec2.Instance(
+        const instance = new aws.ec2.SpotInstanceRequest(
             `${name}-instance`,
             {
-                instanceType: 't4g.nano',
-                ami: getAmazonLinux2AmiId({ arch: 'arm64' }, { parent: this }),
+                instanceType: 't3a.nano',
+                ami: getAmazonLinux2AmiId({ arch: 'x86_64' }, { parent: this }),
                 subnetId: pulumi
                     .output(args.publicSubnetIds)
                     .apply((ids) => ids[0]),
@@ -157,9 +159,26 @@ export class JumpBox extends pulumi.ComponentResource {
                     volumeSize: 4,
                     volumeType: 'gp3',
                 },
-                instanceInitiatedShutdownBehavior: 'terminate',
+                instanceInitiatedShutdownBehavior: 'stop',
+                spotType: 'persistent',
+                creditSpecification: {
+                    cpuCredits: 'standard',
+                },
+                disableApiTermination: true,
+                instanceInterruptionBehaviour: 'stop',
+                waitForFulfillment: true,
+                validUntil: `${new Date(
+                    // reset date about every 10 years
+                    (Date.now()+tenyears) - ((Date.now()+tenyears) % tenyears)
+                )
+                .toISOString()
+                .replace(/00Z$/, '0Z') // just the last two zeros
+            }`
             },
-            { parent: this },
+            {
+                parent: this,
+                ignoreChanges: ['validUntil'],
+            },
         )
 
         // associates the static IP with the instance
@@ -167,8 +186,7 @@ export class JumpBox extends pulumi.ComponentResource {
             `${name}-eip-assoc`,
             {
                 publicIp: eip.publicIp,
-                allocationId: eip.allocationId,
-                instanceId: instance.id,
+                instanceId: instance.spotInstanceId,
             },
             { parent: this },
         )
