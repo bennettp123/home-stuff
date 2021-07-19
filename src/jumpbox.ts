@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as aws from '@pulumi/aws'
+import * as random from '@pulumi/random'
 
 // https://aws.amazon.com/blogs/compute/query-for-the-latest-amazon-linux-ami-ids-using-aws-systems-manager-parameter-store/
 export const getAmazonLinux2AmiId = (
@@ -116,6 +117,7 @@ export class JumpBox extends pulumi.ComponentResource {
     ip: pulumi.Output<string>
     ipv6: pulumi.Output<string>
     hostname?: pulumi.Output<string>
+    instanceId: pulumi.Output<string>
 
     constructor(
         name: string,
@@ -130,9 +132,15 @@ export class JumpBox extends pulumi.ComponentResource {
     ) {
         super('bennettp123:jumpbox/Jumpbox', name, args, opts)
 
-        const vpc = pulumi
-            .output(args.vpcId)
-            .apply((id) => aws.ec2.getVpc({ id }, { parent: this }))
+        const subnet = pulumi.all(
+            [args.publicSubnetIds, args.vpcId]
+        ).apply(async ([ids, vpcId]) => {
+            const id = ids[0]
+            return await aws.ec2.getSubnet({
+                id,
+                vpcId,
+            }, { parent: this, async: true })
+        })
 
         // an Elastic IP provides a static IP address
         const eip = new aws.ec2.Eip(
@@ -143,6 +151,28 @@ export class JumpBox extends pulumi.ComponentResource {
 
         const tenyears = 10 * 365 * 24 * 60 * 60 * 1000
 
+        const ipSuffix = new random.RandomInteger(`${name}-ip-suffix`, {
+            min: 100,
+            max: 200,
+        }, { parent: this })
+
+        const privateIp = pulumi.all([subnet, ipSuffix.result]).apply(
+            ([s, suffix]) => s.cidrBlock.replace(/\.\d*\/*\d*$/, `.${suffix}`)
+        )
+
+        const privateIpv6 = pulumi.all([subnet, ipSuffix.result]).apply(
+            ([s, suffix]) => s.ipv6CidrBlock.replace(/::[\d\w]*\/*\d*$/, `::${suffix}`)
+        )
+
+        new aws.ec2.SecurityGroup(
+            `${name}-sg-jumpbox`,
+            {
+                vpcId: args.vpcId,
+                
+            },
+            { parent: this }
+        )
+
         // the smollest possible instance type
         const instance = new aws.ec2.SpotInstanceRequest(
             `${name}-instance`,
@@ -152,6 +182,11 @@ export class JumpBox extends pulumi.ComponentResource {
                 subnetId: pulumi
                     .output(args.publicSubnetIds)
                     .apply((ids) => ids[0]),
+                privateIp,
+                ipv6Addresses: [
+                    privateIpv6
+                ],
+                sourceDestCheck: false, // breaks routing if enabled
                 vpcSecurityGroupIds: args.securityGroups,
                 userData,
                 rootBlockDevice: {
@@ -168,18 +203,21 @@ export class JumpBox extends pulumi.ComponentResource {
                 instanceInterruptionBehaviour: 'stop',
                 waitForFulfillment: true,
                 validUntil: `${new Date(
-                    // reset date about every 10 years
-                    (Date.now()+tenyears) - ((Date.now()+tenyears) % tenyears)
-                )
-                .toISOString()
-                .replace(/00Z$/, '0Z') // just the last two zeros
-            }`
+                        // reset date about every 10 years
+                        (Date.now()+tenyears) - ((Date.now()+tenyears) % tenyears)
+                    )
+                    .toISOString()
+                    .replace(/000Z$/, '00Z') // just the last two zeros
+                }`
             },
             {
                 parent: this,
                 ignoreChanges: ['validUntil'],
+                deleteBeforeReplace: true,
             },
         )
+
+        this.instanceId = instance.spotInstanceId
 
         // associates the static IP with the instance
         new aws.ec2.EipAssociation(
@@ -225,6 +263,7 @@ export class JumpBox extends pulumi.ComponentResource {
             ip: this.ip,
             ipv6: this.ipv6,
             hostname: this.hostname,
+            instanceId: this.instanceId,
         })
     }
 }

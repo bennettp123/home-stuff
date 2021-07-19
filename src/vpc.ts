@@ -13,6 +13,7 @@ export class Vpc extends pulumi.ComponentResource {
     dbSubnetIds: pulumi.Output<string[]>
     privateSubnetIds: pulumi.Output<string[]>
     publicSubnetIds: pulumi.Output<string[]>
+    isolatedSubnetIds: pulumi.Output<string[]>
     vpcArn: pulumi.Output<string>
     vpcId: pulumi.Output<string>
     natGatewayPublicCidrs: pulumi.Output<pulumi.Output<string>[]>
@@ -20,6 +21,7 @@ export class Vpc extends pulumi.ComponentResource {
     privateAZs: pulumi.Output<string[]>
     publicAZs: pulumi.Output<string[]>
     isolatedAZs: pulumi.Output<string[]>
+    vpc: awsx.ec2.Vpc
 
     constructor(
         name: string,
@@ -33,9 +35,9 @@ export class Vpc extends pulumi.ComponentResource {
     ) {
         super('bennettp123:vpc/Vpc', name, {}, opts)
 
-        const newsMonoVpcName = `${name}-vpc`
-        const newsMonoVpc = new awsx.ec2.Vpc(
-            newsMonoVpcName,
+        const vpcName = `${name}-vpc`
+        const vpc = new awsx.ec2.Vpc(
+            vpcName,
             {
                 numberOfAvailabilityZones,
                 numberOfNatGateways,
@@ -60,11 +62,13 @@ export class Vpc extends pulumi.ComponentResource {
             },
             { parent: this },
         )
-        this.vpcArn = newsMonoVpc.vpc.arn
-        this.vpcId = newsMonoVpc.vpc.id
+        this.vpcArn = vpc.vpc.arn
+        this.vpcId = vpc.vpc.id
+
+        this.vpc = vpc
 
         this.dbSubnetIds = pulumi
-            .output(newsMonoVpc.isolatedSubnets)
+            .output(vpc.isolatedSubnets)
             .apply((subnets) => subnets.map((subnet) => subnet.id))
             .apply((subnets) => {
                 if (subnets.length === 0) {
@@ -74,7 +78,7 @@ export class Vpc extends pulumi.ComponentResource {
             })
 
         this.privateSubnetIds = pulumi
-            .output(newsMonoVpc.privateSubnets)
+            .output(vpc.privateSubnets)
             .apply((subnets) => subnets.map((subnet) => subnet.id))
             .apply((subnets) => {
                 if (subnets.length === 0) {
@@ -84,7 +88,7 @@ export class Vpc extends pulumi.ComponentResource {
             })
 
         this.publicSubnetIds = pulumi
-            .output(newsMonoVpc.publicSubnets)
+            .output(vpc.publicSubnets)
             .apply((subnets) => subnets.map((subnet) => subnet.id))
             .apply((subnets) => {
                 if (subnets.length === 0) {
@@ -93,11 +97,21 @@ export class Vpc extends pulumi.ComponentResource {
                 return pulumi.all(subnets)
             })
 
+        this.isolatedSubnetIds = pulumi
+            .output(vpc.isolatedSubnets)
+            .apply((subnets) => subnets.map((subnet) => subnet.id))
+            .apply((subnets) => {
+                if (subnets.length === 0) {
+                    throw new Error(`Cant find ${name}-isolated subnet`)
+                }
+                return pulumi.all(subnets)
+            })
+
         /**
          * A list of public IPv6 CIDRs associated with this VPC
          */
         this.ipv6PublicCidrs = [
-            pulumi.output(newsMonoVpc.vpc).apply((vpc) => vpc.ipv6CidrBlock),
+            pulumi.output(vpc.vpc).apply((vpc) => vpc.ipv6CidrBlock),
         ]
 
         /**
@@ -105,7 +119,7 @@ export class Vpc extends pulumi.ComponentResource {
          * in CIDR format
          */
         this.natGatewayPublicCidrs = pulumi
-            .output(newsMonoVpc.natGateways)
+            .output(vpc.natGateways)
             .apply((gateways) =>
                 gateways.map(
                     // use the elastic IP (if assigned), otherwise use the public IP
@@ -135,7 +149,7 @@ export class Vpc extends pulumi.ComponentResource {
         )
 
         // create default IPv6 routes in private subnets
-        pulumi.output(newsMonoVpc.privateSubnets).apply((subnets) =>
+        pulumi.output(vpc.privateSubnets).apply((subnets) =>
             subnets.map((subnet) =>
                 subnet.createRoute('default-ipv6-out', {
                     destinationIpv6CidrBlock: '::/0',
@@ -144,12 +158,12 @@ export class Vpc extends pulumi.ComponentResource {
             ),
         )
 
-        const igw = newsMonoVpc.internetGateway
+        const igw = vpc.internetGateway
 
         /**
          * create default IPv6 routes in public subnets
          */
-        pulumi.output(newsMonoVpc.publicSubnets).apply((subnets) =>
+        pulumi.output(vpc.publicSubnets).apply((subnets) =>
             subnets.map((subnet) =>
                 subnet.createRoute('default-ipv6-out', {
                     destinationIpv6CidrBlock: '::/0',
@@ -168,7 +182,7 @@ export class Vpc extends pulumi.ComponentResource {
         )
 
         this.privateAZs = pulumi
-            .output(newsMonoVpc.privateSubnets)
+            .output(vpc.privateSubnets)
             .apply((subnets) => subnets.map((s) => s.subnet.availabilityZone))
             .apply((azs) => {
                 if (azs.length === 0) {
@@ -178,7 +192,7 @@ export class Vpc extends pulumi.ComponentResource {
             })
 
         this.publicAZs = pulumi
-            .output(newsMonoVpc.publicSubnets)
+            .output(vpc.publicSubnets)
             .apply((subnets) => subnets.map((s) => s.subnet.availabilityZone))
             .apply((azs) => {
                 if (azs.length === 0) {
@@ -188,7 +202,7 @@ export class Vpc extends pulumi.ComponentResource {
             })
 
         this.isolatedAZs = pulumi
-            .output(newsMonoVpc.isolatedSubnets)
+            .output(vpc.isolatedSubnets)
             .apply((subnets) => subnets.map((s) => s.subnet.availabilityZone))
             .apply((azs) => {
                 if (azs.length === 0) {
@@ -201,6 +215,7 @@ export class Vpc extends pulumi.ComponentResource {
             dbSubnetIds: this.dbSubnetIds,
             privateSubnetIds: this.privateSubnetIds,
             publicSubnetIds: this.publicSubnetIds,
+            isolatedSubnetIds: this.isolatedSubnetIds,
             vpcArn: this.vpcArn,
             vpcId: this.vpcId,
             natGatewayPublicCidrs: this.natGatewayPublicCidrs,

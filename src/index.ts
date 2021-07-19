@@ -1,8 +1,11 @@
 import './pulumi-state'
 
+import * as pulumi from '@pulumi/pulumi'
+
 import { JumpBox } from './jumpbox'
 import { Vpc } from './vpc'
 import { SecurityGroups } from './security-groups'
+import { JumpBoxDefaultRoute } from './jumpbox-default-route'
 
 const vpc = new Vpc(
     'vpc',
@@ -31,4 +34,9 @@ export const jumpbox = new JumpBox('home-jumpbox', {
     ],
     hostname: 'j1.home.bennettp123.com',
     dnsZone: 'Z1LNE5PQ9LO13V',
+})
+
+new JumpBoxDefaultRoute('home-jumpbox', {
+    vpc: vpc.vpc,
+    instanceId: jumpbox.instanceId,
 })

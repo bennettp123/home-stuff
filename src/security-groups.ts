@@ -272,6 +272,24 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         fromPort: 22,
                         toPort: 22,
                     },
+                    {
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                        ipv6CidrBlocks: [vpc.ipv6CidrBlock],
+                        description: 'allow incoming routed traffic',
+                    },
+                    {
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                        cidrBlocks: pulumi
+                            .output(vpc.cidrBlockAssociations)
+                            .apply((ass) =>
+                                ass.map((block) => block.cidrBlock),
+                            ),
+                        description: 'allow incoming routed traffic',
+                    },
                 ],
                 egress: [
                     {
@@ -291,6 +309,24 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         protocol: 'tcp',
                         fromPort: 22,
                         toPort: 22,
+                    },
+                    {
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                        ipv6CidrBlocks: [vpc.ipv6CidrBlock],
+                        description: 'allow outgoing routed traffic',
+                    },
+                    {
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                        cidrBlocks: pulumi
+                            .output(vpc.cidrBlockAssociations)
+                            .apply((ass) =>
+                                ass.map((block) => block.cidrBlock),
+                            ),
+                        description: 'allow outgoing routed traffic',
                     },
                     {
                         protocol: '-1',
