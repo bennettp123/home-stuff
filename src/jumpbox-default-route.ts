@@ -7,7 +7,7 @@ export class JumpBoxDefaultRoute extends pulumi.ComponentResource {
     constructor (
         name: string,
         args: {
-            instanceId: pulumi.Input<string>
+            interfaceId: pulumi.Input<string>
             vpc: awsx.ec2.Vpc
         },
         opts?: pulumi.CustomResourceOptions,
@@ -32,7 +32,7 @@ export class JumpBoxDefaultRoute extends pulumi.ComponentResource {
                     `jumpbox-out-${cnum}`,
                     {
                         destinationCidrBlock,
-                        instanceId: args.instanceId,
+                        networkInterfaceId: args.interfaceId,
                     },
                     { parent: this }
                 ))

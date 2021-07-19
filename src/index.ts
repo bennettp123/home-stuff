@@ -1,7 +1,5 @@
 import './pulumi-state'
 
-import * as pulumi from '@pulumi/pulumi'
-
 import { JumpBox } from './jumpbox'
 import { Vpc } from './vpc'
 import { SecurityGroups } from './security-groups'
@@ -12,6 +10,7 @@ const vpc = new Vpc(
     {
         cidrBlock: '192.168.64.0/18', // 192.168.60.0 to 192.168.127.255
         numberOfNatGateways: 0,
+        numberOfAvailabilityZones: 1,
     }
 )
 
@@ -38,5 +37,5 @@ export const jumpbox = new JumpBox('home-jumpbox', {
 
 new JumpBoxDefaultRoute('home-jumpbox', {
     vpc: vpc.vpc,
-    instanceId: jumpbox.instanceId,
+    interfaceId: jumpbox.interfaceId,
 })

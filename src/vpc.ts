@@ -28,8 +28,8 @@ export class Vpc extends pulumi.ComponentResource {
         {
             cidrBlock = '10.0.0.0/16',
             enableIPv6 = true,
-            numberOfAvailabilityZones = 3,
-            numberOfNatGateways = 3,
+            numberOfAvailabilityZones = 1,
+            numberOfNatGateways = 0,
         }: NetworkingArgs,
         opts?: pulumi.ComponentResourceOptions | undefined,
     ) {

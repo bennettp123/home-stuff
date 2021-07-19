@@ -63,6 +63,11 @@ yum_repos:
 packages:
   - openvpn
 write_files:
+  - path: /etc/cron.d/automatic-upgrades
+    owner: root:root
+    permissions: '0644'
+    content: |
+      0 * * * * root yum upgrade -y
   - path: /etc/openvpn/server.conf
     owner: root:root
     permissions: '0644'
@@ -118,6 +123,7 @@ export class JumpBox extends pulumi.ComponentResource {
     ipv6: pulumi.Output<string>
     hostname?: pulumi.Output<string>
     instanceId: pulumi.Output<string>
+    interfaceId: pulumi.Output<string>
 
     constructor(
         name: string,
@@ -173,21 +179,45 @@ export class JumpBox extends pulumi.ComponentResource {
             { parent: this }
         )
 
+        // create the nic explicitly here
+        //   - SpotInstanceRequest doesn't do sourceDestCheck properly
+        //   - routes persist after instance recreation
+        const nic = new aws.ec2.NetworkInterface(
+            `${name}-interface`,
+            {
+                subnetId: pulumi
+                    .output(args.publicSubnetIds)
+                    .apply((ids) => ids[0]),
+                sourceDestCheck: false,
+                securityGroups: args.securityGroups,
+                privateIps: [privateIp],
+                ipv6Addresses: [
+                    privateIpv6
+                ],
+            },
+            {
+                parent: this,
+                deleteBeforeReplace: true,
+                replaceOnChanges: [
+                    'privateIp', // the API does not allow these to change
+                    'privateIps',
+                ]
+            }
+        )
+
+        this.interfaceId = nic.id
+
         // the smollest possible instance type
         const instance = new aws.ec2.SpotInstanceRequest(
             `${name}-instance`,
             {
                 instanceType: 't3a.nano',
                 ami: getAmazonLinux2AmiId({ arch: 'x86_64' }, { parent: this }),
-                subnetId: pulumi
-                    .output(args.publicSubnetIds)
-                    .apply((ids) => ids[0]),
-                privateIp,
-                ipv6Addresses: [
-                    privateIpv6
-                ],
-                sourceDestCheck: false, // breaks routing if enabled
-                vpcSecurityGroupIds: args.securityGroups,
+                networkInterfaces: [{
+                    deviceIndex: 0,
+                    networkInterfaceId: nic.id,
+                    deleteOnTermination: false, // pulumi will delete it for us
+                }],
                 userData,
                 rootBlockDevice: {
                     deleteOnTermination: true,
@@ -264,6 +294,7 @@ export class JumpBox extends pulumi.ComponentResource {
             ipv6: this.ipv6,
             hostname: this.hostname,
             instanceId: this.instanceId,
+            interfaceId: this.interfaceId,
         })
     }
 }
