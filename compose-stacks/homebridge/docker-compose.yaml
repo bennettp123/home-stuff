@@ -1,0 +1,29 @@
+#version: '3.8'
+
+x-aws-vpc: vpc-068a30e17741632fa
+
+services:
+  homebridge:
+    image: oznu/homebridge:latest
+    #container_name: homebridge
+    restart: always
+    #network_mode: host
+    deploy:
+      resources:
+        limits:
+          cpu: '0.25'
+          memory: '512M'
+    environment:
+      - TZ=Australia/Perth
+      - PGID=1000
+      - PUID=1000
+      - HOMEBRIDGE_CONFIG_UI=1
+      - HOMEBRIDGE_CONFIG_UI_PORT=8581
+    volumes:
+      - homebridge:/homebridge
+
+volumes:
+  homebridge:
+    driver_opts:
+      uid: 0
+      gid: 0

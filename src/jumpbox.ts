@@ -1,5 +1,5 @@
-import * as pulumi from '@pulumi/pulumi'
 import * as aws from '@pulumi/aws'
+import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 
 // https://aws.amazon.com/blogs/compute/query-for-the-latest-amazon-linux-ami-ids-using-aws-systems-manager-parameter-store/
@@ -174,7 +174,7 @@ export class JumpBox extends pulumi.ComponentResource {
             `${name}-sg-jumpbox`,
             {
                 vpcId: args.vpcId,
-                
+
             },
             { parent: this }
         )
@@ -275,7 +275,7 @@ export class JumpBox extends pulumi.ComponentResource {
                 records: [this.ipv6],
             },
             { parent: this })
-            
+
             const a = new aws.route53.Record(`${name}-a`,
             {
                 name: args.hostname,
