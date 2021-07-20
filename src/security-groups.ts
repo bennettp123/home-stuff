@@ -14,6 +14,12 @@ export class SecurityGroups extends pulumi.ComponentResource {
     /** A permissive security group that allows all outbound access */
     allowEgressToAllSecurityGroup: aws.ec2.SecurityGroup
 
+    /** A semi-permissive security group that allows inbound access from the VPC */
+    allowInboundWithinVpc: aws.ec2.SecurityGroup
+
+    /** A semi-permissive security group that allows inbound access form the VPC and private subnets */
+    allowInboundFromPrivate: aws.ec2.SecurityGroup
+
     /** A security group for the jumpbox */
     jumpboxSecurityGroup: aws.ec2.SecurityGroup
 
@@ -251,6 +257,36 @@ export class SecurityGroups extends pulumi.ComponentResource {
             { parent: this },
         )
 
+        this.allowInboundWithinVpc = new aws.ec2.SecurityGroup(
+            `${name}-inbound-within-vpc`,
+            {
+                description: 'allow all traffic from within the VPC',
+                revokeRulesOnDelete: true,
+                vpcId: vpc.id,
+                ingress: [
+                    {
+                        ipv6CidrBlocks: [vpc.ipv6CidrBlock],
+                        description: 'allow all inbound within the VPC',
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                    {
+                        cidrBlocks: pulumi
+                            .output(vpc.cidrBlockAssociations)
+                            .apply((ass) =>
+                                ass.map((block) => block.cidrBlock),
+                            ),
+                        description: 'allow all inbound within the VPC',
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                ],
+            },
+            { parent: this },
+        )
+
         this.jumpboxSecurityGroup = new aws.ec2.SecurityGroup(
             `${name}-jumpbox`,
             {
@@ -339,6 +375,61 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         protocol: '-1',
                         cidrBlocks: ['0.0.0.0/0'],
                         description: 'allow outbound',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                ],
+            },
+            { parent: this },
+        )
+
+        this.allowInboundFromPrivate = new aws.ec2.SecurityGroup(
+            `${name}-inbound-from-private`,
+            {
+                description: 'allow all traffic from private subnets',
+                revokeRulesOnDelete: true,
+                vpcId: vpc.id,
+                ingress: [
+                    {
+                        ipv6CidrBlocks: [vpc.ipv6CidrBlock],
+                        description: 'allow all traffic from within the VPC',
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                    {
+                        ipv6CidrBlocks: allowFromV6,
+                        description: 'allow all traffic from trusted sources',
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                    {
+                        cidrBlocks: pulumi
+                            .output(vpc.cidrBlockAssociations)
+                            .apply((ass) =>
+                                ass.map((block) => block.cidrBlock),
+                            ),
+                        description: 'allow all traffic from within the VPC',
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                    {
+                        cidrBlocks: [
+                            '192.168.0.0/18',
+                            '192.168.128.0/18',
+                            '192.168.192.0/18',
+                        ],
+                        description: 'allow traffic from home subnets',
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                    {
+                        cidrBlocks: allowFromV4,
+                        description: 'allow all traffic from trusted sources',
+                        protocol: '-1',
                         fromPort: 0,
                         toPort: 0,
                     },

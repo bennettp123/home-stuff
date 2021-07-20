@@ -1,6 +1,7 @@
 #version: '3.8'
 
-x-aws-vpc: vpc-068a30e17741632fa
+x-aws-vpc: arn:aws:ec2:ap-southeast-2:841519609203:vpc/vpc-068a30e17741632fa
+x-aws-cluster: arn:aws:ecs:ap-southeast-2:841519609203:cluster/home-039a0e9
 
 services:
   homebridge:
