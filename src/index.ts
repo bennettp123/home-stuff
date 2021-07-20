@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import { DockerComposeIamRoles } from './docker-compose-on-ecs'
 import { Cluster } from './ecs-cluster'
-import { Homebridge } from './homebridge'
+import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { JumpBox } from './jumpbox'
 import { JumpBoxDefaultRoute } from './jumpbox-default-route'
 import './pulumi-state'
@@ -66,7 +66,7 @@ if (config.getBoolean('enable-vpc-endpoints')) {
     })
 }
 
-if (config.getBoolean('enable-homebridge')) {
+if (config.getBoolean('enable-homebridge-ecs')) {
     if (!cluster) {
         throw new pulumi.RunError('homebridge requires an ECS cluster!')
     }
@@ -75,7 +75,7 @@ if (config.getBoolean('enable-homebridge')) {
         pulumi.log.warn('warning: homebridge needs VPC endpoints!')
     }
 
-    new Homebridge('home', {
+    new HomebridgeEcs('home', {
         clusterArn: cluster.arn,
         subnetIds: privateSubnetIds,
         securityGroupIds: [
