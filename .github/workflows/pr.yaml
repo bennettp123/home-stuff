@@ -21,4 +21,3 @@ jobs:
         with:
           command: preview
           stack-name: home
-        env:
