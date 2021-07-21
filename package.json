@@ -9,6 +9,7 @@
         "@pulumi/aws": "^4.0.0",
         "@pulumi/awsx": "^0.30.0",
         "@pulumi/pulumi": "^3.0.0",
-        "@pulumi/random": "^4.2.0"
+        "@pulumi/random": "^4.2.0",
+        "ip-address": "^8.1.0"
     }
 }

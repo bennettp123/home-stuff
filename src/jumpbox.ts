@@ -1,65 +1,7 @@
-import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
-import * as random from '@pulumi/random'
+import { Instance, userData as defaultUserData } from './instance'
 
-// https://aws.amazon.com/blogs/compute/query-for-the-latest-amazon-linux-ami-ids-using-aws-systems-manager-parameter-store/
-export const getAmazonLinux2AmiId = (
-    args?: {
-        arch?: 'x86_64' | 'arm64'
-    },
-    opts?: pulumi.InvokeOptions,
-): Promise<string> => {
-    return aws.ssm
-        .getParameter(
-            {
-                name: `/aws/service/ami-amazon-linux-latest/amzn2-ami-minimal-hvm-${
-                    args?.arch ?? 'x86_64'
-                }-ebs`,
-            },
-            { ...opts, async: true },
-        )
-        .then((result) => result.value)
-        .catch((reason) => {
-            pulumi.log.error(`Error getting Amazon Linux 2 AMI ID: ${reason}`)
-            throw reason
-        })
-}
-
-export const logins = {
-    bennett: [
-        'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH bennett@MacBook Pro 16',
-    ]
-}
-
-export const sudoers = ['bennett']
-
-// examples: https://cloudinit.readthedocs.io/en/latest/topics/examples.html#including-users-and-groups
-const users = Object.entries(logins)
-    .map(([name, ssh_authorized_keys]) => {
-        return {
-            name,
-            ssh_authorized_keys,
-            ...(sudoers.includes(name)
-                ? { sudo: 'ALL=(ALL) NOPASSWD:ALL' }
-                : {}),
-        }
-    })
-    .filter((user) => user.ssh_authorized_keys.length > 0)
-
-
-export const userData = `#cloud-config
-repo_upgrade: all
-ssh_deletekeys: true
-users: ${JSON.stringify(users)}
-repo_update: true
-yum_repos:
-  epel:
-    name: Extra Packages for Enterprise Linux 7 - $basearch
-    mirrorlist: https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch&infra=$infra&content=$contentdir
-    failovermethod: priority
-    enabled: true
-    gpgcheck: true
-    gpgkey: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+export const userData = `${defaultUserData}
 packages:
   - openvpn
 write_files:
@@ -118,6 +60,11 @@ runcmd:
   - systemctl start openvpn@server
 `
 
+/**
+ * Jumpbox provides two things:
+ *  - an SSH target to connect to remotely
+ *  - an OpenVPN server that connects back to the unifi router at home
+ */
 export class JumpBox extends pulumi.ComponentResource {
     ip: pulumi.Output<string>
     ipv6: pulumi.Output<string>
@@ -138,164 +85,36 @@ export class JumpBox extends pulumi.ComponentResource {
     ) {
         super('bennettp123:jumpbox/Jumpbox', name, args, opts)
 
-        const subnet = pulumi.all(
-            [args.publicSubnetIds, args.vpcId]
-        ).apply(async ([ids, vpcId]) => {
-            const id = ids[0]
-            return await aws.ec2.getSubnet({
-                id,
-                vpcId,
-            }, { parent: this, async: true })
-        })
-
-        // an Elastic IP provides a static IP address
-        const eip = new aws.ec2.Eip(
-            `${name}-eip`,
-            { vpc: true },
-            { parent: this },
-        )
-
-        const tenyears = 10 * 365 * 24 * 60 * 60 * 1000
-
-        const ipSuffix = new random.RandomInteger(`${name}-ip-suffix`, {
-            min: 100,
-            max: 200,
-        }, { parent: this })
-
-        const privateIp = pulumi.all([subnet, ipSuffix.result]).apply(
-            ([s, suffix]) => s.cidrBlock.replace(/\.\d*\/*\d*$/, `.${suffix}`)
-        )
-
-        const privateIpv6 = pulumi.all([subnet, ipSuffix.result]).apply(
-            ([s, suffix]) => s.ipv6CidrBlock.replace(/::[\d\w]*\/*\d*$/, `::${suffix}`)
-        )
-
-        new aws.ec2.SecurityGroup(
-            `${name}-sg-jumpbox`,
+        const instance = new Instance(
+            name,
             {
+                subnetIds: args.publicSubnetIds,
                 vpcId: args.vpcId,
-
-            },
-            { parent: this }
-        )
-
-        // create the nic explicitly here
-        //   - SpotInstanceRequest doesn't do sourceDestCheck properly
-        //   - routes persist after instance recreation
-        const nic = new aws.ec2.NetworkInterface(
-            `${name}-interface`,
-            {
-                subnetId: pulumi
-                    .output(args.publicSubnetIds)
-                    .apply((ids) => ids[0]),
-                sourceDestCheck: false,
-                securityGroups: args.securityGroups,
-                privateIps: [privateIp],
-                ipv6Addresses: [
-                    privateIpv6
-                ],
-            },
-            {
-                parent: this,
-                deleteBeforeReplace: true,
-                replaceOnChanges: [
-                    'privateIp', // the API does not allow these to change
-                    'privateIps',
-                ]
-            }
-        )
-
-        this.interfaceId = nic.id
-
-        // the smollest possible instance type
-        const instance = new aws.ec2.SpotInstanceRequest(
-            `${name}-instance`,
-            {
-                instanceType: 't3a.nano',
-                ami: getAmazonLinux2AmiId({ arch: 'x86_64' }, { parent: this }),
-                networkInterfaces: [{
-                    deviceIndex: 0,
-                    networkInterfaceId: nic.id,
-                    deleteOnTermination: false, // pulumi will delete it for us
-                }],
+                securityGroupIds: args.securityGroups,
                 userData,
-                rootBlockDevice: {
-                    deleteOnTermination: true,
-                    volumeSize: 4,
-                    volumeType: 'gp3',
+                network: {
+                    fixedIp: true,
+                    useEIP: true,
+                    fixedIpv6: true,
+                    useENI: true,
+                    sourceDestCheck: false,
                 },
-                instanceInitiatedShutdownBehavior: 'stop',
-                spotType: 'persistent',
-                creditSpecification: {
-                    cpuCredits: 'standard',
-                },
-                disableApiTermination: true,
-                instanceInterruptionBehaviour: 'stop',
-                waitForFulfillment: true,
-                validUntil: `${new Date(
-                        // reset date about every 10 years
-                        (Date.now()+tenyears) - ((Date.now()+tenyears) % tenyears)
-                    )
-                    .toISOString()
-                    .replace(/000Z$/, '00Z') // just the last two zeros
-                }`
-            },
-            {
-                parent: this,
-                ignoreChanges: ['validUntil'],
-                deleteBeforeReplace: true,
-            },
-        )
-
-        this.instanceId = instance.spotInstanceId
-
-        // associates the static IP with the instance
-        new aws.ec2.EipAssociation(
-            `${name}-eip-assoc`,
-            {
-                publicIp: eip.publicIp,
-                instanceId: instance.spotInstanceId,
+                ...(args.dnsZone && args.hostname
+                    ? {
+                          dns: {
+                              zone: args.dnsZone,
+                              hostname: args.hostname,
+                          },
+                      }
+                    : {}),
             },
             { parent: this },
         )
 
-        this.ip = eip.publicIp
-        this.ipv6 = pulumi
-            .output(instance.ipv6Addresses)
-            .apply((addresses) => addresses.join(', '))
-
-        if (args.dnsZone && args.hostname) {
-
-            const aaaa = new aws.route53.Record(`${name}-aaaa`,
-            {
-                name: args.hostname,
-                type: 'AAAA',
-                zoneId: args.dnsZone,
-                ttl: 60,
-                records: [this.ipv6],
-            },
-            { parent: this })
-
-            const a = new aws.route53.Record(`${name}-a`,
-            {
-                name: args.hostname,
-                type: 'A',
-                zoneId: args.dnsZone,
-                ttl: 60,
-                records: [this.ip],
-            },
-            { parent: this })
-
-            this.hostname = pulumi.all([aaaa.fqdn, a.fqdn]).apply(([fqdn, _]) => fqdn)
-        }
-
-        this.registerOutputs({
-            ip: this.ip,
-            ipv6: this.ipv6,
-            hostname: this.hostname,
-            instanceId: this.instanceId,
-            interfaceId: this.interfaceId,
-        })
+        this.ip = instance.ip
+        this.ipv6 = instance.ipv6
+        this.hostname = instance.hostname
+        this.instanceId = instance.instanceId
+        this.interfaceId = instance.interfaceId
     }
 }
-

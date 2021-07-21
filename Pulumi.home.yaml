@@ -2,7 +2,7 @@ secretsprovider: awskms://alias/pulumi-homestuff?region=ap-southeast-2
 encryptedkey: AQICAHgZ2mNDZiRGqJOc1Q1668gBs4w7h00qjlIAmNx9ypYsCwE+Ishgkh8muuB0DgB+hkYhAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQME6QRcNn7nRsgwTq5AgEQgDstiAYpwx4gWYZrGQvHwfRy76Fnx5p8p08ObbRRwYyYDhcPZkBog9ClqRb4swlYrNT/0aqZVpJ4Wlo5Tw==
 config:
   aws:region: ap-southeast-2
-  home-stuff:enable-ecs: 'false'
-  home-stuff:enable-homebridge: 'false'
-  home-stuff:enable-homebridge-ecs: 'false'
-  home-stuff:enable-vpc-endpoints: 'false'
+  home-stuff:enable-ecs: "false"
+  home-stuff:enable-homebridge: "false"
+  home-stuff:enable-homebridge-ecs: "false"
+  home-stuff:enable-vpc-endpoints: "false"
