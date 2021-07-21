@@ -51,19 +51,21 @@ new JumpBoxDefaultRoute('home-jumpbox', {
     interfaceId: jumpbox.interfaceId,
 })
 
-export const testInstance = new Instance('test', {
-    subnetIds: privateSubnetIds,
-    vpcId,
-    securityGroupIds: [
-        securityGroups.allowEgressToAllSecurityGroup.id,
-        securityGroups.essentialIcmpSecurityGroup.id,
-        securityGroups.allowInboundFromHome.id,
-    ],
-    dns: {
-        zone: 'Z1LNE5PQ9LO13V',
-        hostname: 't1.home.bennettp123.com',
-    },
-})
+export const testInstance = config.getBoolean('enable-test-server')
+    ? new Instance('test', {
+          subnetIds: privateSubnetIds,
+          vpcId,
+          securityGroupIds: [
+              securityGroups.allowEgressToAllSecurityGroup.id,
+              securityGroups.essentialIcmpSecurityGroup.id,
+              securityGroups.allowInboundFromHome.id,
+          ],
+          dns: {
+              zone: 'Z1LNE5PQ9LO13V',
+              hostname: 't1.home.bennettp123.com',
+          },
+      })
+    : undefined
 
 export const dockerComposeRole = new DockerComposeIamRoles('home', {})
 
