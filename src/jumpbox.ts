@@ -79,7 +79,7 @@ export class JumpBox extends pulumi.ComponentResource {
                 securityGroupIds: args.securityGroupIds,
                 userData,
                 network: {
-                    fixedIp: true,
+                    fixedPrivateIp: true,
                     useEIP: true,
                     fixedIpv6: true,
                     useENI: true,
