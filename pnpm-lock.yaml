@@ -1,18 +1,20 @@
 lockfileVersion: 5.3
 
 specifiers:
-  '@pulumi/aws': ^4.0.0
+  '@pulumi/aws': ^4.13.0
   '@pulumi/awsx': ^0.30.0
-  '@pulumi/pulumi': ^3.0.0
+  '@pulumi/docker': ^3.0.0
+  '@pulumi/pulumi': ^3.7.1
   '@pulumi/random': ^4.2.0
-  '@types/node': ^10.0.0
+  '@types/node': ^10.17.60
   ip-address: ^8.1.0
   prettier: ^2.3.2
 
 dependencies:
-  '@pulumi/aws': 4.12.0
-  '@pulumi/awsx': 0.30.0_a7e6529b27473bbbecddbe79d596480c
-  '@pulumi/pulumi': 3.7.0
+  '@pulumi/aws': 4.13.0
+  '@pulumi/awsx': 0.30.0_e9e1009ba4559c0104798b7791afe3ae
+  '@pulumi/docker': 3.0.0
+  '@pulumi/pulumi': 3.7.1
   '@pulumi/random': 4.2.0
   ip-address: 8.1.0
 
@@ -22,11 +24,11 @@ devDependencies:
 
 packages:
 
-  /@grpc/grpc-js/1.3.5:
-    resolution: {integrity: sha512-V29L2QNKkLWM3bcJfVFMSo+Z7kkO8A1s7MAfdzBXLYEC1PE5/M0n1iXBDiD5aUtyVLh5GILcbme2bGtIHl0FMQ==}
+  /@grpc/grpc-js/1.3.6:
+    resolution: {integrity: sha512-v7+LQFbqZKmd/Tvf5/j1Xlbq6jXL/4d+gUtm2TNX4QiEC3ELWADmGr2dGlUyLl6aKTuYfsN72vAsO5zmavYkEg==}
     engines: {node: ^8.13.0 || >=10.10.0}
     dependencies:
-      '@types/node': 16.3.2
+      '@types/node': 16.4.0
     dev: false
 
   /@logdna/tail-file/2.1.0:
@@ -77,28 +79,28 @@ packages:
     resolution: {integrity: sha1-p3c2C1s5oaLlEG+OhY8v0tBgxXA=}
     dev: false
 
-  /@pulumi/aws/4.12.0:
-    resolution: {integrity: sha512-hzFf1DrSXJvB4/fbySheTCN5YetUeqZCjYjB1CnoVGK+NtwoWV/PkrsyZYAy6VbJWGUcbivxDmz9KcAFwDdCNQ==}
+  /@pulumi/aws/4.13.0:
+    resolution: {integrity: sha512-zUJ+vwSPaB/GxA040nT7Uz5k6P5DTDM+MqBaNusg2AMe/yiWcqkGG9biGaVdKXGBN4tlFTn6TTK3yoJm2oOBwg==}
     requiresBuild: true
     dependencies:
-      '@pulumi/pulumi': 3.7.0
-      aws-sdk: 2.946.0
+      '@pulumi/pulumi': 3.7.1
+      aws-sdk: 2.950.0
       builtin-modules: 3.0.0
       mime: 2.5.2
       read-package-tree: 5.3.1
       resolve: 1.20.0
     dev: false
 
-  /@pulumi/awsx/0.30.0_a7e6529b27473bbbecddbe79d596480c:
+  /@pulumi/awsx/0.30.0_e9e1009ba4559c0104798b7791afe3ae:
     resolution: {integrity: sha512-QtYVDFSkZxJ/JkAxaSwms9i/tJU2rA9F/VncCN6e8D0r29C5t4eYQhmB4chsLww9AjWJPRM7CXosDJs8+gy1Zg==}
     peerDependencies:
       '@pulumi/aws': ^4.0.0
       '@pulumi/pulumi': ^3.0.0
     dependencies:
-      '@pulumi/aws': 4.12.0
+      '@pulumi/aws': 4.13.0
       '@pulumi/docker': 3.0.0
-      '@pulumi/pulumi': 3.7.0
-      '@types/aws-lambda': 8.10.78
+      '@pulumi/pulumi': 3.7.1
+      '@types/aws-lambda': 8.10.79
       mime: 2.5.2
     dev: false
 
@@ -106,15 +108,15 @@ packages:
     resolution: {integrity: sha512-AzPhb/ibuHBy+GGDHrY3rPJeaO5DIMqv/ABtenQdoAw8X00E3UTV+D9dDS/GRq0oJ2aDvZupIlSdrPD7eJ5jgA==}
     requiresBuild: true
     dependencies:
-      '@pulumi/pulumi': 3.7.0
+      '@pulumi/pulumi': 3.7.1
       semver: 5.7.1
     dev: false
 
-  /@pulumi/pulumi/3.7.0:
-    resolution: {integrity: sha512-W8BoHwsZv+2wubw+zkj6XU8Fgp1brmefohpz5hDnZTiIG7/L1t+rQCE45PcStWRrE5242Tz3jZzws9IKfi1oPA==}
+  /@pulumi/pulumi/3.7.1:
+    resolution: {integrity: sha512-+VxfQBOS/CrZuw4C78vpscRjvW77OU8HHxkYyjY826p36OongLqmCjTGnVf0U8GyCrEnEz1OtkPDPegD5U8PYw==}
     engines: {node: '>=8.13.0 || >=10.10.0'}
     dependencies:
-      '@grpc/grpc-js': 1.3.5
+      '@grpc/grpc-js': 1.3.6
       '@logdna/tail-file': 2.1.0
       '@pulumi/query': 0.3.0
       google-protobuf: 3.17.3
@@ -139,11 +141,11 @@ packages:
     resolution: {integrity: sha512-zdkI6AO2W0H4UwYlKLijccBkkylH1XoqXPoZ8l5shKnOAZVa5izmLkIw2wQOT65BAwjvfczZgdNpPng9n7W06w==}
     requiresBuild: true
     dependencies:
-      '@pulumi/pulumi': 3.7.0
+      '@pulumi/pulumi': 3.7.1
     dev: false
 
-  /@types/aws-lambda/8.10.78:
-    resolution: {integrity: sha512-+lZ8NuHT0qKEEpiZR4bF1G24SLrLwzdu0i9Cjdc3BGq6XJU6gBBYS5I0RJ8RdDCtgqgGdW8sOwsiZGHrC6mp0Q==}
+  /@types/aws-lambda/8.10.79:
+    resolution: {integrity: sha512-YgpllvHcDrPfzyf8/a2+ScRoEtJQjAP0pSgIneWcVpfqHGmiAaS2oMO3e4y3InJMgrMyuxGPde72CBZS/X8vJA==}
     dev: false
 
   /@types/long/4.0.1:
@@ -154,8 +156,8 @@ packages:
     resolution: {integrity: sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw==}
     dev: true
 
-  /@types/node/16.3.2:
-    resolution: {integrity: sha512-jJs9ErFLP403I+hMLGnqDRWT0RYKSvArxuBVh2veudHV7ifEC1WAmjJADacZ7mRbA2nWgHtn8xyECMAot0SkAw==}
+  /@types/node/16.4.0:
+    resolution: {integrity: sha512-HrJuE7Mlqcjj+00JqMWpZ3tY8w7EUd+S0U3L1+PQSWiXZbOgyQDvi+ogoUxaHApPJq5diKxYBQwA3iIlNcPqOg==}
     dev: false
 
   /argparse/1.0.10:
@@ -173,8 +175,8 @@ packages:
     resolution: {integrity: sha1-5QNHYR1+aQlDIIu9r+vLwvuGbUY=}
     dev: false
 
-  /aws-sdk/2.946.0:
-    resolution: {integrity: sha512-d0fbVNHdpoeszGUcxOV8m+/kLNxUfKP5QsGwaRjcQfvEokFmvdKsvw87LhepFOa00NaI4J3jt8AbsX4mvmcChg==}
+  /aws-sdk/2.950.0:
+    resolution: {integrity: sha512-iFC5fKLuFLEV27xeKmxDHDZzIDj4upm5+Ts3NpYYRbwPlOG0nE0gZzf9fRYkLkLgTr0TQq26CbKorgeo+6ailw==}
     engines: {node: '>= 0.8.0'}
     requiresBuild: true
     dependencies:
@@ -566,7 +568,7 @@ packages:
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
       '@types/long': 4.0.1
-      '@types/node': 16.3.2
+      '@types/node': 16.4.0
       long: 4.0.0
     dev: false
 
