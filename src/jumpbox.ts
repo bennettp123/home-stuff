@@ -3,7 +3,7 @@ import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 
 const config = new pulumi.Config('jumpbox')
 
-export const userData = `${defaultUserData}
+export const userData = pulumi.interpolate`${defaultUserData}
 packages:
   - openvpn
 write_files:
@@ -26,7 +26,6 @@ write_files:
       user nobody
       group nobody
       route 192.168.0.0 255.255.192.0
-      # 192.168.64.0/18 is assigned to the AWS VPC
       route 192.168.128.0 255.255.192.0
       route 192.168.192.0 255.255.192.0
       port 1194
@@ -34,7 +33,9 @@ write_files:
   - path: /etc/openvpn/static.key
     owner: root:root
     permissions: '0600'
-    content: ${JSON.stringify(config.requireSecret('openvpn-shared-secret'))}
+    content: ${pulumi
+        .output(config.requireSecret('openvpn-shared-secret'))
+        .apply((content) => JSON.stringify(content))}
 runcmd:
   - echo 1 > /proc/sys/net/ipv4/ip_forward
   - echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp

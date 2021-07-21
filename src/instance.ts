@@ -82,8 +82,10 @@ export interface InstanceArgs {
          * across instance recreation. Otherwise, an IP address
          * will be allocated by AWS.
          */
-        fixedIp?: boolean
-        /** If enabled, an EIP will be created and allocated. */
+        fixedPrivateIp?: boolean
+        /** If enabled, a fixed public IP will be created and
+         * allocated.
+         */
         useEIP?: boolean
         /**
          * If enabled, a fixed IPv6 address will be maintained
@@ -156,7 +158,7 @@ export class Instance extends pulumi.ComponentResource {
 
         const tenyears = 10 * 365 * 24 * 60 * 60 * 1000
 
-        const ipSuffix = args.network?.fixedIp
+        const ipSuffix = args.network?.fixedPrivateIp
             ? new random.RandomInteger(
                   `${name}-ip-suffix`,
                   {
@@ -352,8 +354,8 @@ export class Instance extends pulumi.ComponentResource {
                 )
         }
 
-        this.publicIp = instance.publicIp
-        this.privateIp = instance.privateIp
+        this.publicIp = eip ? eip.publicIp : instance.publicIp
+        this.privateIp = nic ? nic.privateIp : instance.privateIp
         this.ipv6 = nic
             ? pulumi
                   .output(nic.ipv6Addresses)
@@ -385,7 +387,7 @@ export class Instance extends pulumi.ComponentResource {
                     type: 'A',
                     zoneId: args.dns.zone,
                     ttl:
-                        args.network?.fixedIp || args.network?.useEIP
+                        args.network?.fixedPrivateIp || args.network?.useEIP
                             ? 3600
                             : 300,
                     records: [this.ip],
