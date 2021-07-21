@@ -1,5 +1,6 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
+import { getTags } from './helpers'
 
 // https://docs.docker.com/cloud/ecs-integration/#run-an-application-on-ecs
 const actions = [
@@ -96,6 +97,7 @@ export class DockerComposeIamRoles extends pulumi.ComponentResource {
                         .output(aws.getCallerIdentity())
                         .apply((i) => i.accountId),
                 }),
+                tags: getTags({ Name: name }),
             },
             { parent: this },
         )

@@ -1,5 +1,6 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
+import { getTags } from './helpers'
 
 export const homeIPv6s = [
     '2404:bf40:e402::/48', // gabo rd
@@ -108,6 +109,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         cidrBlocks: ['0.0.0.0/0'],
                     },
                 ],
+                tags: getTags({ Name: `${name}-sg-egress-allow-all` }),
             },
             { parent: this },
         )
@@ -271,6 +273,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                             ),
                     },
                 ],
+                tags: getTags({ Name: `${name}-sg-essential-icmp` }),
             },
             { parent: this },
         )
@@ -301,6 +304,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 0,
                     },
                 ],
+                tags: getTags({ Name: `${name}-inbound-within-vpc` }),
             },
             { parent: this },
         )
@@ -397,6 +401,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 0,
                     },
                 ],
+                tags: getTags({ Name: `${name}-jumpbox` }),
             },
             { parent: this },
         )
@@ -448,6 +453,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 0,
                     },
                 ],
+                tags: getTags({ Name: `${name}-inbound-from-private` }),
             },
             { parent: this },
         )
@@ -474,6 +480,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 0,
                     },
                 ],
+                tags: getTags({ Name: `${name}-inbound-from-home` }),
             },
             { parent: this },
         )

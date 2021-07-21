@@ -1,6 +1,7 @@
 import * as aws from '@pulumi/aws'
 import * as awsx from '@pulumi/awsx'
 import * as pulumi from '@pulumi/pulumi'
+import { getTags } from './helpers'
 
 export interface NetworkingArgs {
     numberOfAvailabilityZones?: number
@@ -45,18 +46,22 @@ export class Vpc extends pulumi.ComponentResource {
                 enableDnsSupport: true,
                 enableDnsHostnames: true,
                 assignGeneratedIpv6CidrBlock: enableIPv6,
+                tags: getTags({ Name: vpcName }),
                 subnets: [
                     {
                         type: 'private',
                         cidrMask: 24,
+                        tags: getTags({ Name: `${vpcName}-private` }),
                     },
                     {
                         type: 'isolated',
                         cidrMask: 24,
+                        tags: getTags({ Name: `${vpcName}-isolated` }),
                     },
                     {
                         type: 'public',
                         cidrMask: 24,
+                        tags: getTags({ Name: `${vpcName}-public` }),
                     },
                 ],
             },

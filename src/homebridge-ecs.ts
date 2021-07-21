@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as awsx from '@pulumi/awsx'
 import * as docker from '@pulumi/docker'
 import * as pulumi from '@pulumi/pulumi'
+import { getTags } from './helpers'
 
 export class Homebridge extends pulumi.ComponentResource {
     constructor(
@@ -30,6 +31,7 @@ export class Homebridge extends pulumi.ComponentResource {
                         },
                     ],
                 },
+                tags: getTags({ Name: name }),
             },
             { parent: this },
         )
@@ -114,6 +116,7 @@ export class Homebridge extends pulumi.ComponentResource {
                             aws.iam.ManagedPolicy
                                 .AmazonECSTaskExecutionRolePolicy,
                         ],
+                        tags: getTags({ Name: `${name}-ecsTaskExecutionRole` }),
                     },
                     { parent: this },
                 ).arn,
@@ -144,6 +147,7 @@ export class Homebridge extends pulumi.ComponentResource {
                     subnets: args.subnetIds,
                     securityGroups: args.securityGroupIds,
                 },
+                tags: getTags({ Name: `${name}-homebridge` }),
             },
             { parent: this },
         )

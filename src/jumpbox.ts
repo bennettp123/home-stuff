@@ -1,6 +1,8 @@
 import * as pulumi from '@pulumi/pulumi'
 import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 
+const config = new pulumi.Config('jumpbox')
+
 export const userData = `${defaultUserData}
 packages:
   - openvpn
@@ -24,6 +26,7 @@ write_files:
       user nobody
       group nobody
       route 192.168.0.0 255.255.192.0
+      # 192.168.64.0/18 is assigned to the AWS VPC
       route 192.168.128.0 255.255.192.0
       route 192.168.192.0 255.255.192.0
       port 1194
@@ -31,28 +34,7 @@ write_files:
   - path: /etc/openvpn/static.key
     owner: root:root
     permissions: '0600'
-    content: |
-      #
-      # 2048 bit OpenVPN static key
-      #
-      -----BEGIN OpenVPN Static key V1-----
-      57fdc295a505e7534bddafa12b0ae75a
-      a122febd739207ebce55be21a0c0fffe
-      0387b9cd47e71deea463611f579142a2
-      7122a1ac04431c53340090d59d6491ab
-      6dd39e7dbfd105c104dc6e962db8b9d0
-      53c9929da34add07ccc9687ede6fec06
-      b60a8c97bd125fe8a5b433daf2a78781
-      6d7e3cf483538585b09dbc220f4e6fc7
-      2f1843d6f7d969231703c937517a4857
-      2725192af4022d2a3e5af0cd51f08a69
-      ad16a4f7723423f92f5a46804793fe8a
-      6c49ad8757f8903ed3595e92f935a78d
-      66417df940206251bac03161d3d2a952
-      086ba1f72fcddd2ff493f456dc866851
-      800942fc78a4ee7bfeb045db8c4dec8d
-      7fddaf48bfc98da3fd3782b00ee5093d
-      -----END OpenVPN Static key V1-----
+    content: ${JSON.stringify(config.requireSecret('openvpn-shared-secret'))}
 runcmd:
   - echo 1 > /proc/sys/net/ipv4/ip_forward
   - echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp

@@ -1,5 +1,6 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
+import { getTags } from './helpers'
 
 export class VpcEndpoints extends pulumi.ComponentResource {
     constructor(
@@ -21,6 +22,7 @@ export class VpcEndpoints extends pulumi.ComponentResource {
                 vpcEndpointType: 'Gateway',
                 securityGroupIds: args.securityGroupIds,
                 privateDnsEnabled: true,
+                tags: getTags({ Name: `${name}-s3` }),
             },
             { parent: this },
         )
@@ -34,6 +36,7 @@ export class VpcEndpoints extends pulumi.ComponentResource {
                 subnetIds: args.subnetIds,
                 securityGroupIds: args.securityGroupIds,
                 privateDnsEnabled: true,
+                tags: getTags({ Name: `${name}-ecr-api` }),
             },
             { parent: this },
         )
@@ -47,6 +50,7 @@ export class VpcEndpoints extends pulumi.ComponentResource {
                 subnetIds: args.subnetIds,
                 securityGroupIds: args.securityGroupIds,
                 privateDnsEnabled: true,
+                tags: getTags({ Name: `${name}-ecr-dkr` }),
             },
             { parent: this },
         )

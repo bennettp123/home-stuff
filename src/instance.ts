@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import { Address6 } from 'ip-address'
+import { getTags } from './helpers'
 
 // https://aws.amazon.com/blogs/compute/query-for-the-latest-amazon-linux-ami-ids-using-aws-systems-manager-parameter-store/
 export const getAmazonLinux2AmiId = (
@@ -146,7 +147,11 @@ export class Instance extends pulumi.ComponentResource {
 
         // an Elastic IP provides a static IP address
         const eip = args.network?.useEIP
-            ? new aws.ec2.Eip(`${name}-eip`, { vpc: true }, { parent: this })
+            ? new aws.ec2.Eip(
+                  `${name}-eip`,
+                  { vpc: true, tags: getTags({ Name: `${name}-eip` }) },
+                  { parent: this },
+              )
             : undefined
 
         const tenyears = 10 * 365 * 24 * 60 * 60 * 1000
@@ -155,8 +160,8 @@ export class Instance extends pulumi.ComponentResource {
             ? new random.RandomInteger(
                   `${name}-ip-suffix`,
                   {
-                      min: 100,
-                      max: 200,
+                      min: 10,
+                      max: 250,
                   },
                   { parent: this },
               )
@@ -240,7 +245,10 @@ export class Instance extends pulumi.ComponentResource {
         const nic = args.network?.useENI
             ? new aws.ec2.NetworkInterface(
                   `${name}-interface`,
-                  networkSettings,
+                  {
+                      ...networkSettings,
+                      tags: getTags({ Name: `${name}-interface` }),
+                  },
                   {
                       parent: this,
                       deleteBeforeReplace: true,
@@ -293,13 +301,34 @@ export class Instance extends pulumi.ComponentResource {
                         .toISOString()
                         .replace(/000Z$/, '00Z') // just the last two zeros
                 }`,
+                tags: getTags({ Name: `${name}-instance` }),
+                volumeTags: getTags({
+                    Name: `${name}-instance-root`,
+                    InstanceName: `${name}-instance`,
+                }),
             },
             {
                 parent: this,
                 ignoreChanges: ['validUntil'],
+                replaceOnChanges: [...(nic ? [] : ['privateIp']), 'tags'],
                 deleteBeforeReplace: true,
             },
         )
+
+        // aws.ec2.SpotInstanceRequest doesn't propagate tags to the instance,
+        // but we can do it ourselves
+        pulumi
+            .all([instance.spotInstanceId, instance.tags])
+            .apply(([instanceId, tags]) =>
+                Object.entries(tags ?? {}).map(
+                    ([key, value]) =>
+                        new aws.ec2.Tag(`${name}-instance-${key}`, {
+                            resourceId: instanceId,
+                            key,
+                            value,
+                        }),
+                ),
+            )
 
         this.interfaceId = nic?.id ?? instance.primaryNetworkInterfaceId
         this.instanceId = instance.spotInstanceId
