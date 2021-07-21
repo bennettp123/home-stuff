@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi'
 import { DockerComposeIamRoles } from './docker-compose-on-ecs'
 import { Cluster } from './ecs-cluster'
 import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
+import { Instance } from './instance'
 import { JumpBox } from './jumpbox'
 import { JumpBoxDefaultRoute } from './jumpbox-default-route'
 import './pulumi-state'
@@ -32,20 +33,36 @@ const securityGroups = new SecurityGroups('security-groups', {
 })
 
 export const jumpbox = new JumpBox('home-jumpbox', {
-    publicSubnetIds,
+    subnetIds: publicSubnetIds,
     vpcId,
-    securityGroups: [
+    securityGroupIds: [
         securityGroups.jumpboxSecurityGroup.id,
         securityGroups.allowEgressToAllSecurityGroup.id,
         securityGroups.essentialIcmpSecurityGroup.id,
     ],
-    hostname: 'j1.home.bennettp123.com',
-    dnsZone: 'Z1LNE5PQ9LO13V',
+    dns: {
+        hostname: 'j1.home.bennettp123.com',
+        zone: 'Z1LNE5PQ9LO13V',
+    },
 })
 
 new JumpBoxDefaultRoute('home-jumpbox', {
     vpc: homeVpc.vpc,
     interfaceId: jumpbox.interfaceId,
+})
+
+export const testInstance = new Instance('test', {
+    subnetIds: privateSubnetIds,
+    vpcId,
+    securityGroupIds: [
+        securityGroups.allowEgressToAllSecurityGroup.id,
+        securityGroups.essentialIcmpSecurityGroup.id,
+        securityGroups.allowInboundFromHome.id,
+    ],
+    dns: {
+        zone: 'Z1LNE5PQ9LO13V',
+        hostname: 't1.home.bennettp123.com',
+    },
 })
 
 export const dockerComposeRole = new DockerComposeIamRoles('home', {})

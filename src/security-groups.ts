@@ -1,14 +1,27 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 
-export const allowFromV6 = [
+export const homeIPv6s = [
     '2404:bf40:e402::/48', // gabo rd
 ]
 
-export const allowFromV4 = [
+export const trustedPublicIPv6s = homeIPv6s // TODO add the VPC cidr to this
+
+export const trustedPublicIPv4s = [
     '210.10.212.154/32', // gabo rd
     '202.41.193.62/32', // herdsman pde
 ]
+
+export const homeIPv4s = [
+    '192.168.0.0/18',
+    //192.168.64.0/18 is assigned to the aws VPC
+    '192.168.128.0/18',
+    '192.168.192.0/18',
+]
+
+export const vpcIPv4s = ['192.168.64.0/18']
+
+export const privateIPv4s = [...vpcIPv4s, ...homeIPv4s]
 
 export class SecurityGroups extends pulumi.ComponentResource {
     /** A permissive security group that allows all outbound access */
@@ -28,6 +41,11 @@ export class SecurityGroups extends pulumi.ComponentResource {
      * (such as Packet Too Large)
      */
     essentialIcmpSecurityGroup: aws.ec2.SecurityGroup
+
+    /**
+     * A security group that allows access from home subnets.
+     */
+    allowInboundFromHome: aws.ec2.SecurityGroup
 
     /**
      * @param name {string}
@@ -295,14 +313,14 @@ export class SecurityGroups extends pulumi.ComponentResource {
                 vpcId: vpc.id,
                 ingress: [
                     {
-                        ipv6CidrBlocks: allowFromV6,
+                        ipv6CidrBlocks: trustedPublicIPv6s,
                         description: 'allow inbound SSH from trusted sources',
                         protocol: 'tcp',
                         fromPort: 22,
                         toPort: 22,
                     },
                     {
-                        cidrBlocks: allowFromV4,
+                        cidrBlocks: trustedPublicIPv4s,
                         description: 'allow inbound SSH from trusted sources',
                         protocol: 'tcp',
                         fromPort: 22,
@@ -398,7 +416,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 0,
                     },
                     {
-                        ipv6CidrBlocks: allowFromV6,
+                        ipv6CidrBlocks: trustedPublicIPv6s,
                         description: 'allow all traffic from trusted sources',
                         protocol: '-1',
                         fromPort: 0,
@@ -416,19 +434,41 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 0,
                     },
                     {
-                        cidrBlocks: [
-                            '192.168.0.0/18',
-                            '192.168.128.0/18',
-                            '192.168.192.0/18',
-                        ],
+                        cidrBlocks: homeIPv4s,
                         description: 'allow traffic from home subnets',
                         protocol: '-1',
                         fromPort: 0,
                         toPort: 0,
                     },
                     {
-                        cidrBlocks: allowFromV4,
+                        cidrBlocks: trustedPublicIPv4s,
                         description: 'allow all traffic from trusted sources',
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                ],
+            },
+            { parent: this },
+        )
+
+        this.allowInboundFromHome = new aws.ec2.SecurityGroup(
+            `${name}-inbound-from-home`,
+            {
+                description: 'allow all traffic from private subnets',
+                revokeRulesOnDelete: true,
+                vpcId: vpc.id,
+                ingress: [
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        description: 'allow all traffic from home',
+                        protocol: '-1',
+                        fromPort: 0,
+                        toPort: 0,
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        description: 'allow traffic from home',
                         protocol: '-1',
                         fromPort: 0,
                         toPort: 0,

@@ -1,5 +1,5 @@
 import * as pulumi from '@pulumi/pulumi'
-import { Instance, userData as defaultUserData } from './instance'
+import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 
 export const userData = `${defaultUserData}
 packages:
@@ -60,6 +60,13 @@ runcmd:
   - systemctl start openvpn@server
 `
 
+interface JumpboxArgs extends InstanceArgs {
+    dns: {
+        zone: pulumi.Input<string>
+        hostname: pulumi.Input<string>
+    }
+}
+
 /**
  * Jumpbox provides two things:
  *  - an SSH target to connect to remotely
@@ -67,6 +74,8 @@ runcmd:
  */
 export class JumpBox extends pulumi.ComponentResource {
     ip: pulumi.Output<string>
+    publicIp: pulumi.Output<string>
+    privateIp: pulumi.Output<string>
     ipv6: pulumi.Output<string>
     hostname?: pulumi.Output<string>
     instanceId: pulumi.Output<string>
@@ -74,13 +83,7 @@ export class JumpBox extends pulumi.ComponentResource {
 
     constructor(
         name: string,
-        args: {
-            publicSubnetIds: pulumi.Input<string[]>
-            vpcId: pulumi.Input<string>
-            securityGroups: pulumi.Input<string>[]
-            dnsZone?: pulumi.Input<string>
-            hostname?: pulumi.Input<string>
-        },
+        args: JumpboxArgs,
         opts?: pulumi.CustomResourceOptions,
     ) {
         super('bennettp123:jumpbox/Jumpbox', name, args, opts)
@@ -88,9 +91,9 @@ export class JumpBox extends pulumi.ComponentResource {
         const instance = new Instance(
             name,
             {
-                subnetIds: args.publicSubnetIds,
+                subnetIds: args.subnetIds,
                 vpcId: args.vpcId,
-                securityGroupIds: args.securityGroups,
+                securityGroupIds: args.securityGroupIds,
                 userData,
                 network: {
                     fixedIp: true,
@@ -99,14 +102,7 @@ export class JumpBox extends pulumi.ComponentResource {
                     useENI: true,
                     sourceDestCheck: false,
                 },
-                ...(args.dnsZone && args.hostname
-                    ? {
-                          dns: {
-                              zone: args.dnsZone,
-                              hostname: args.hostname,
-                          },
-                      }
-                    : {}),
+                dns: args.dns,
             },
             { parent: this },
         )
@@ -116,5 +112,7 @@ export class JumpBox extends pulumi.ComponentResource {
         this.hostname = instance.hostname
         this.instanceId = instance.instanceId
         this.interfaceId = instance.interfaceId
+        this.publicIp = instance.publicIp!
+        this.privateIp = instance.privateIp
     }
 }

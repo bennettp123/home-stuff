@@ -62,6 +62,47 @@ yum_repos:
     gpgkey: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
 `
 
+export interface InstanceArgs {
+    subnetIds: pulumi.Input<string[]>
+    vpcId: pulumi.Input<string>
+    securityGroupIds: pulumi.Input<string>[]
+    /**
+     * if set, A and AAAA records will be created
+     * with the hostname and zone specified
+     */
+    dns?: {
+        zone: pulumi.Input<string>
+        hostname: pulumi.Input<string>
+    }
+    userData?: pulumi.Input<string>
+    network?: {
+        /**
+         * If enabled, a fixed IPv4 address will be maintained
+         * across instance recreation. Otherwise, an IP address
+         * will be allocated by AWS.
+         */
+        fixedIp?: boolean
+        /** If enabled, an EIP will be created and allocated. */
+        useEIP?: boolean
+        /**
+         * If enabled, a fixed IPv6 address will be maintained
+         * across instance recreation. Otherwise, an IPv6 address
+         * will be allocated by AWS.
+         */
+        fixedIpv6?: boolean
+        /**
+         * If enabled, an ENI will be created separately to the
+         * instance. Otherwise, it will just use the default ENI
+         * created by AWS.
+         */
+        useENI?: boolean
+        /**
+         * implies useENI
+         */
+        sourceDestCheck?: boolean
+    }
+}
+
 /**
  * An Instance provides a cheap, persistent spot instance (t3a.nano, less than
  * $2 per month), and associated boilerplate to make sure it is persistent.
@@ -85,53 +126,7 @@ export class Instance extends pulumi.ComponentResource {
 
     constructor(
         name: string,
-        args: {
-            subnetIds: pulumi.Input<string[]>
-            vpcId: pulumi.Input<string>
-            securityGroupIds: pulumi.Input<string>[]
-
-            /**
-             * if set, A and AAAA records will be created
-             * with the hostname and zone specified
-             */
-            dns?: {
-                zone: pulumi.Input<string>
-                hostname: pulumi.Input<string>
-            }
-
-            userData: pulumi.Input<string>
-
-            network?: {
-                /**
-                 * If enabled, a fixed IPv4 address will be maintained
-                 * across instance recreation. Otherwise, an IP address
-                 * will be allocated by AWS.
-                 */
-                fixedIp?: boolean
-
-                /** If enabled, an EIP will be created and allocated. */
-                useEIP?: boolean
-
-                /**
-                 * If enabled, a fixed IPv6 address will be maintained
-                 * across instance recreation. Otherwise, an IPv6 address
-                 * will be allocated by AWS.
-                 */
-                fixedIpv6?: boolean
-
-                /**
-                 * If enabled, an ENI will be created separately to the
-                 * instance. Otherwise, it will just use the default ENI
-                 * created by AWS.
-                 */
-                useENI?: boolean
-
-                /**
-                 * implies useENI
-                 */
-                sourceDestCheck?: boolean
-            }
-        },
+        args: InstanceArgs,
         opts?: pulumi.CustomResourceOptions,
     ) {
         super('bennettp123:instance/Instance', name, args, opts)
@@ -224,14 +219,17 @@ export class Instance extends pulumi.ComponentResource {
                   })
             : undefined
 
-        const networkSettings = {
+        const networkSettings: Partial<aws.ec2.SpotInstanceRequestArgs> &
+            aws.ec2.NetworkInterfaceArgs = {
             subnetId: pulumi.output(args.subnetIds).apply((ids) => ids[0]),
             ...(args.network?.sourceDestCheck !== undefined
                 ? {
                       sourceDestCheck: args.network?.sourceDestCheck,
                   }
                 : {}),
-            securityGroups: args.securityGroupIds,
+            ...(args.network?.useENI
+                ? { securityGroups: args.securityGroupIds }
+                : { vpcSecurityGroupIds: args.securityGroupIds }),
             ...(privateIp ? { privateIps: [privateIp] } : {}),
             ...(privateIpv6 ? { ipv6Addresses: [privateIpv6] } : {}),
         }
@@ -271,7 +269,7 @@ export class Instance extends pulumi.ComponentResource {
                           ],
                       }
                     : networkSettings),
-                userData: args.userData,
+                userData: args.userData ?? userData,
                 rootBlockDevice: {
                     deleteOnTermination: true,
                     volumeSize: 4,
@@ -318,7 +316,11 @@ export class Instance extends pulumi.ComponentResource {
             )
             this.ip = eip.publicIp
         } else {
-            this.ip = instance.publicIp ?? instance.privateIp
+            this.ip = pulumi
+                .all([instance.publicIp, instance.privateIp])
+                .apply(([publicIp, privateIp]) =>
+                    publicIp && publicIp !== '' ? publicIp : privateIp,
+                )
         }
 
         this.publicIp = instance.publicIp
