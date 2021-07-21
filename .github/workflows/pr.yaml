@@ -10,13 +10,20 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 14.x
-      - name: Configure AWS Credentials
+      - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-region: ${{ secrets.AWS_REGION }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - run: npm install
+      - name: cache .pnpm-store
+        uses: actions/cache@v1
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: install pnpm
+        run: curl -f https://get.pnpm.io/v6.7.js | node - add --global pnpm@6
+      - run: pnpm install
       - uses: pulumi/actions@v3
         with:
           command: preview
