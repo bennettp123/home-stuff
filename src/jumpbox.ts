@@ -6,6 +6,7 @@ const config = new pulumi.Config('jumpbox')
 export const userData = pulumi.interpolate`${defaultUserData}
 packages:
   - openvpn
+  - bind-utils
 write_files:
   - path: /etc/cron.d/automatic-upgrades
     owner: root:root
