@@ -87,11 +87,17 @@ export interface InstanceArgs {
 }
 
 /**
- * An Instance provides a cheap, persistent spot instance (t3a.nano, less than
- * $2 per month), and associated boilerplate to make sure it is persistent.
+ * An Instance provides a cheap, persistent spot instance, and (optional)
+ * boilerplate to make it more* persistent.
  *
- * Optionally, it can have a fixed IP and IPv6 address. The fixed IPv4 is useful
- * if the private address needs to remain unchanged.
+ * Note that practically any change to a SpotInstanceRequest results in the 
+ * termination and recreation of the underlying instance. Therefore, you should
+ * strive to ensure that everything on the instance is installed and configured 
+ * automatically at launch. Any data or configuration that needs to be saved
+ * should be saved elsewhere, such as an S3 bucket or an external filesystem.
+ *
+ * Optionally, it can have a fixed (private)IP and IPv6 address. The fixed IPv4 is 
+ * useful if the private address needs to remain unchanged.
  *
  * You can also create a fixed public address using an EIP.
  *
