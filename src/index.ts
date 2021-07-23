@@ -7,7 +7,6 @@ import { Instance } from './instance'
 import './pulumi-state'
 import { SecurityGroups } from './security-groups'
 import { Vpc } from './vpc'
-import { VpcEndpoints } from './vpc-endpoints'
 
 const config = new pulumi.Config('home-stuff')
 
@@ -31,7 +30,7 @@ const securityGroups = new SecurityGroups('home', {
     vpcId,
 })
 
-export const gateway = new Gateway('home', {
+export const gateway = new Gateway('home-gateway', {
     subnetIds: publicSubnetIds,
     vpcId,
     securityGroupIds: [
@@ -45,7 +44,7 @@ export const gateway = new Gateway('home', {
     },
 })
 
-new GatewayDefaultRoutes('home', {
+new GatewayDefaultRoutes('home-gateway', {
     vpc: homeVpc.vpc,
     interfaceId: gateway.interfaceId,
 })
@@ -95,18 +94,6 @@ export const privateServer = config.getBoolean('enable-test-servers')
 export const cluster = config.getBoolean('enable-ecs')
     ? new Cluster('home', {})
     : null
-
-if (config.getBoolean('enable-vpc-endpoints')) {
-    pulumi.log.warn('VPC endpoints enabled. This has cost implications!')
-    new VpcEndpoints('home', {
-        vpcId,
-        subnetIds: privateSubnetIds,
-        securityGroupIds: [
-            securityGroups.allowInboundWithinVpc.id,
-            securityGroups.essentialIcmpSecurityGroup.id,
-        ],
-    })
-}
 
 if (config.getBoolean('enable-homebridge-ecs')) {
     if (!cluster) {
