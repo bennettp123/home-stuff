@@ -4,29 +4,6 @@ import * as random from '@pulumi/random'
 import { Address6 } from 'ip-address'
 import { getTags } from './helpers'
 
-// https://aws.amazon.com/blogs/compute/query-for-the-latest-amazon-linux-ami-ids-using-aws-systems-manager-parameter-store/
-export const getAmazonLinux2AmiId = (
-    args?: {
-        arch?: 'x86_64' | 'arm64'
-    },
-    opts?: pulumi.InvokeOptions,
-): Promise<string> => {
-    return aws.ssm
-        .getParameter(
-            {
-                name: `/aws/service/ami-amazon-linux-latest/amzn2-ami-minimal-hvm-${
-                    args?.arch ?? 'x86_64'
-                }-ebs`,
-            },
-            { ...opts, async: true },
-        )
-        .then((result) => result.value)
-        .catch((reason) => {
-            pulumi.log.error(`Error getting Amazon Linux 2 AMI ID: ${reason}`)
-            throw reason
-        })
-}
-
 export const logins = {
     bennett: [
         'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH bennett@MacBook Pro 16',
@@ -54,19 +31,23 @@ ssh_deletekeys: true
 users: ${JSON.stringify(users)}
 repo_update: true
 yum_repos:
-  epel:
-    name: Extra Packages for Enterprise Linux 7 - $basearch
-    mirrorlist: https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch&infra=$infra&content=$contentdir
-    failovermethod: priority
-    enabled: true
-    gpgcheck: true
-    gpgkey: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+  epel: ${JSON.stringify({
+      name: 'Extra Packages for Enterprise Linux 7 - $basearch',
+      mirrorlist:
+          'https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch&infra=$infra&content=$contentdir',
+      failovermethod: 'priority',
+      enabled: true,
+      gpgcheck: true,
+      gpgkey: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7',
+  })}
 `
 
 export interface InstanceArgs {
     subnetIds: pulumi.Input<string[]>
     vpcId: pulumi.Input<string>
     securityGroupIds: pulumi.Input<string>[]
+    instanceType: pulumi.Input<string>
+    userData?: pulumi.Input<string>
     /**
      * if set, A and AAAA records will be created
      * with the hostname and zone specified
@@ -75,7 +56,6 @@ export interface InstanceArgs {
         zone: pulumi.Input<string>
         hostname: pulumi.Input<string>
     }
-    userData?: pulumi.Input<string>
     network?: {
         /**
          * If enabled, a fixed IPv4 address will be maintained
@@ -262,12 +242,36 @@ export class Instance extends pulumi.ComponentResource {
               )
             : undefined
 
-        // the smollest possible instance type
+        const arch = pulumi
+            .output(args.instanceType)
+            .apply((instanceType) =>
+                aws.ec2.getInstanceType(
+                    {
+                        instanceType,
+                    },
+                    { parent: this },
+                ),
+            )
+            .supportedArchitectures.apply((supported) => {
+                if (supported.some((arch) => arch === 'arm64')) {
+                    return 'arm64'
+                }
+                if (supported.some((arch) => arch === 'x86_64')) {
+                    return 'x86_64'
+                }
+                throw new pulumi.ResourceError(
+                    `Instance architecture(s) not supported: ${JSON.stringify(
+                        supported,
+                    )}`,
+                    this,
+                )
+            })
+
         const instance = new aws.ec2.SpotInstanceRequest(
             `${name}-instance`,
             {
-                instanceType: 't3a.nano',
-                ami: getAmazonLinux2AmiId({ arch: 'x86_64' }, { parent: this }),
+                instanceType: args.instanceType,
+                ami: getAmazonLinux2AmiId({ arch }, { parent: this }),
                 ...(nic
                     ? {
                           networkInterfaces: [
@@ -403,4 +407,30 @@ export class Instance extends pulumi.ComponentResource {
                 .apply(([fqdn, _]) => fqdn)
         }
     }
+}
+
+// https://aws.amazon.com/blogs/compute/query-for-the-latest-amazon-linux-ami-ids-using-aws-systems-manager-parameter-store/
+export function getAmazonLinux2AmiId(
+    args: {
+        arch: 'x86_64' | 'arm64' | pulumi.Input<'x86_64' | 'arm64'>
+    },
+    opts?: pulumi.InvokeOptions,
+): pulumi.Output<string> {
+    return pulumi.output(args?.arch).apply(
+        async (arch) =>
+            await aws.ssm
+                .getParameter(
+                    {
+                        name: `/aws/service/ami-amazon-linux-latest/amzn2-ami-minimal-hvm-${arch}-ebs`,
+                    },
+                    { ...opts, async: true },
+                )
+                .then((result) => result.value)
+                .catch((reason) => {
+                    pulumi.log.error(
+                        `Error getting Amazon Linux 2 AMI ID: ${reason}`,
+                    )
+                    throw reason
+                }),
+    )
 }

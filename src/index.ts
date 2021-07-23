@@ -54,6 +54,7 @@ new JumpBoxDefaultRoute('home-jumpbox', {
 export const testInstance = config.getBoolean('enable-test-server')
     ? new Instance('test', {
           subnetIds: privateSubnetIds,
+          instanceType: 't4g.nano',
           vpcId,
           securityGroupIds: [
               securityGroups.allowEgressToAllSecurityGroup.id,
