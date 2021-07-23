@@ -3,6 +3,22 @@ import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 
 const config = new pulumi.Config('jumpbox')
 
+const openVpnConfig = `ifconfig 192.168.127.2 192.168.127.1
+dev tun
+secret static.key
+keepalive 10 60
+ping-timer-rem
+persist-tun
+persist-key
+user nobody
+group nobody
+route 192.168.0.0 255.255.192.0
+route 192.168.128.0 255.255.192.0
+route 192.168.192.0 255.255.192.0
+port 1194
+remote 210.10.212.154 1194
+`
+
 export const userData = pulumi.interpolate`${defaultUserData}
 packages:
   - openvpn
@@ -16,21 +32,7 @@ write_files:
   - path: /etc/openvpn/server.conf
     owner: root:root
     permissions: '0644'
-    content: |
-      ifconfig 192.168.127.2 192.168.127.1
-      dev tun
-      secret static.key
-      keepalive 10 60
-      ping-timer-rem
-      persist-tun
-      persist-key
-      user nobody
-      group nobody
-      route 192.168.0.0 255.255.192.0
-      route 192.168.128.0 255.255.192.0
-      route 192.168.192.0 255.255.192.0
-      port 1194
-      remote 210.10.212.154 1194
+    content: ${JSON.stringify(openVpnConfig)}
   - path: /etc/openvpn/static.key
     owner: root:root
     permissions: '0600'
