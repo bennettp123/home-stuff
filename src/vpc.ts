@@ -215,19 +215,5 @@ export class Vpc extends pulumi.ComponentResource {
                 }
                 return pulumi.all(azs)
             })
-
-        this.registerOutputs({
-            dbSubnetIds: this.dbSubnetIds,
-            privateSubnetIds: this.privateSubnetIds,
-            publicSubnetIds: this.publicSubnetIds,
-            isolatedSubnetIds: this.isolatedSubnetIds,
-            vpcArn: this.vpcArn,
-            vpcId: this.vpcId,
-            natGatewayPublicCidrs: this.natGatewayPublicCidrs,
-            ipv6PublicCidrs: this.ipv6PublicCidrs,
-            privateAZs: this.privateAZs,
-            publicAZs: this.publicAZs,
-            isolatedAZs: this.isolatedAZs,
-        })
     }
 }

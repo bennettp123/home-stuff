@@ -34,8 +34,8 @@ export class SecurityGroups extends pulumi.ComponentResource {
     /** A semi-permissive security group that allows inbound access form the VPC and private subnets */
     allowInboundFromPrivate: aws.ec2.SecurityGroup
 
-    /** A security group for the jumpbox */
-    jumpboxSecurityGroup: aws.ec2.SecurityGroup
+    /** A security group for the gateway */
+    gatewaySecurityGroup: aws.ec2.SecurityGroup
 
     /**
      * A security group which permits essential ICMP and ICMPv6 messages
@@ -309,10 +309,10 @@ export class SecurityGroups extends pulumi.ComponentResource {
             { parent: this },
         )
 
-        this.jumpboxSecurityGroup = new aws.ec2.SecurityGroup(
-            `${name}-jumpbox`,
+        this.gatewaySecurityGroup = new aws.ec2.SecurityGroup(
+            `${name}-gw`,
             {
-                description: 'security group for jumpbox',
+                description: 'security group for gateway',
                 revokeRulesOnDelete: true,
                 vpcId: vpc.id,
                 ingress: [
@@ -401,7 +401,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 0,
                     },
                 ],
-                tags: getTags({ Name: `${name}-jumpbox` }),
+                tags: getTags({ Name: `${name}-gw` }),
             },
             { parent: this },
         )

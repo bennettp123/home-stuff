@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import { Address6 } from 'ip-address'
+import { makeCloudInitUserdata } from './cloud-init-helpers'
 import { getTags } from './helpers'
 
 export const logins = {
@@ -25,22 +26,23 @@ export const users = Object.entries(logins)
     })
     .filter((user) => user.ssh_authorized_keys.length > 0)
 
-export const userData = `#cloud-config
-repo_upgrade: all
-ssh_deletekeys: true
-users: ${JSON.stringify(users)}
-repo_update: true
-yum_repos:
-  epel: ${JSON.stringify({
-      name: 'Extra Packages for Enterprise Linux 7 - $basearch',
-      mirrorlist:
-          'https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch&infra=$infra&content=$contentdir',
-      failovermethod: 'priority',
-      enabled: true,
-      gpgcheck: true,
-      gpgkey: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7',
-  })}
-`
+export const userData: {} = {
+    repo_upgrade: 'all',
+    ssh_deletekeys: true,
+    users,
+    repo_update: true,
+    yum_repos: {
+        epel: {
+            name: 'Extra Packages for Enterprise Linux 7 - $basearch',
+            mirrorlist:
+                'https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch&infra=$infra&content=$contentdir',
+            failovermethod: 'priority',
+            enabled: true,
+            gpgcheck: true,
+            gpgkey: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7',
+        },
+    },
+}
 
 export interface InstanceArgs {
     subnetIds: pulumi.Input<string[]>
@@ -54,7 +56,7 @@ export interface InstanceArgs {
      */
     dns?: {
         zone: pulumi.Input<string>
-        hostname: pulumi.Input<string>
+        hostname?: pulumi.Input<string>
     }
     network?: {
         /**
@@ -90,13 +92,13 @@ export interface InstanceArgs {
  * An Instance provides a cheap, persistent spot instance, and (optional)
  * boilerplate to make it more* persistent.
  *
- * Note that practically any change to a SpotInstanceRequest results in the 
+ * Note that practically any change to a SpotInstanceRequest results in the
  * termination and recreation of the underlying instance. Therefore, you should
- * strive to ensure that everything on the instance is installed and configured 
+ * strive to ensure that everything on the instance is installed and configured
  * automatically at launch. Any data or configuration that needs to be saved
  * should be saved elsewhere, such as an S3 bucket or an external filesystem.
  *
- * Optionally, it can have a fixed (private)IP and IPv6 address. The fixed IPv4 is 
+ * Optionally, it can have a fixed (private)IP and IPv6 address. The fixed IPv4 is
  * useful if the private address needs to remain unchanged.
  *
  * You can also create a fixed public address using an EIP.
@@ -146,7 +148,7 @@ export class Instance extends pulumi.ComponentResource {
 
         const ipSuffix = args.network?.fixedPrivateIp
             ? new random.RandomInteger(
-                  `${name}-ip-suffix`,
+                  `${name}-private-ip-suffix`,
                   {
                       min: 10,
                       max: 250,
@@ -159,7 +161,7 @@ export class Instance extends pulumi.ComponentResource {
             ? [0, 1, 2, 3].map(
                   (_, i) =>
                       new random.RandomString(
-                          `${name}-ip-suffix-${i}`,
+                          `${name}-ipv6-suffix-${i}`,
                           {
                               length: 4,
                               lower: false,
@@ -289,7 +291,7 @@ export class Instance extends pulumi.ComponentResource {
                           ],
                       }
                     : networkSettings),
-                userData: args.userData ?? userData,
+                userData: args.userData ?? makeCloudInitUserdata(userData),
                 rootBlockDevice: {
                     deleteOnTermination: true,
                     volumeSize: 4,
@@ -323,6 +325,7 @@ export class Instance extends pulumi.ComponentResource {
                 parent: this,
                 ignoreChanges: ['validUntil'],
                 replaceOnChanges: [...(nic ? [] : ['privateIp']), 'tags'],
+                ...(nic ? { dependsOn: [nic] } : {}),
                 deleteBeforeReplace: true,
             },
         )
@@ -374,11 +377,25 @@ export class Instance extends pulumi.ComponentResource {
                   .output(instance.ipv6Addresses)
                   .apply((addresses) => addresses.join(', '))
 
-        if (args.dns?.zone && args.dns?.hostname) {
+        if (args.dns?.zone) {
+            const hostname =
+                args.dns.hostname ??
+                new random.RandomString(
+                    `${name}-hostname`,
+                    {
+                        length: 8,
+                        lower: true,
+                        upper: false,
+                        number: false,
+                        special: false,
+                    },
+                    { parent: this },
+                ).result
+
             const aaaa = new aws.route53.Record(
                 `${name}-aaaa`,
                 {
-                    name: args.dns.hostname,
+                    name: hostname,
                     type: 'AAAA',
                     zoneId: args.dns.zone,
                     ttl: args.network?.fixedIpv6 ? 3600 : 300,
@@ -393,7 +410,7 @@ export class Instance extends pulumi.ComponentResource {
             const a = new aws.route53.Record(
                 `${name}-a`,
                 {
-                    name: args.dns.hostname,
+                    name: hostname,
                     type: 'A',
                     zoneId: args.dns.zone,
                     ttl:

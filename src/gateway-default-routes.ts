@@ -1,7 +1,7 @@
 import * as awsx from '@pulumi/awsx'
 import * as pulumi from '@pulumi/pulumi'
 
-export class JumpBoxDefaultRoute extends pulumi.ComponentResource {
+export class GatewayDefaultRoutes extends pulumi.ComponentResource {
     constructor(
         name: string,
         args: {
@@ -11,10 +11,23 @@ export class JumpBoxDefaultRoute extends pulumi.ComponentResource {
         opts?: pulumi.CustomResourceOptions,
     ) {
         super(
-            'bennettp123:jumpbox-default-route/JumpboxDefaultRoute',
+            'bennettp123:gateway-default-routes/GatewayDefaultRoutes',
             name,
             args,
             opts,
+        )
+
+        pulumi.output(args.vpc.privateSubnets).apply((subnets) =>
+            subnets.forEach((subnet) =>
+                subnet.createRoute(
+                    `default-gw`,
+                    {
+                        destinationCidrBlock: '0.0.0.0/0',
+                        networkInterfaceId: args.interfaceId,
+                    },
+                    { parent: this },
+                ),
+            ),
         )
 
         pulumi
@@ -33,9 +46,9 @@ export class JumpBoxDefaultRoute extends pulumi.ComponentResource {
                         '192.168.0.0/18',
                         '192.168.128.0/18',
                         '192.168.192.0/18',
-                    ].forEach((destinationCidrBlock, cnum) =>
+                    ].forEach((destinationCidrBlock, idx) =>
                         subnet.createRoute(
-                            `jumpbox-out-${cnum}`,
+                            `home-${idx}`,
                             {
                                 destinationCidrBlock,
                                 networkInterfaceId: args.interfaceId,

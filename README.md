@@ -23,12 +23,10 @@ pulumi up
 The VPC has three different subnet types:
 
 -   public -- instances are assigned a public IPv4 and IPv6 at launch
--   private -- instances are not assigned a public IPv4 at launch; outbound access is IPv6-only
+-   private -- instances are not assigned a public IPv4 at launch; outbound access only
 -   isolated -- instances do not have outbound access to the public internet
 
-Typically, on a private subnet, outbound IPv4 is routed through a NAT gateway. However, NAT gateways are expensive, so the private subnets do not support outbound IPv4 traffic to the public internet.
-
-However, outbound IPv6 traffic is routed through an engress-only internet gateway, which has no cost. Therefore, the private subnets are able to communicate to the public internet over IPv6.
+Typically, on a private subnet, outbound IPv4 is routed through a NAT gateway. However, NAT gateways are expensive, so instead, the gateway instance routes IPv4 traffic to the public internet. IPv6 traffic is routed through an egress-only internet gateway, which has no cost.
 
 The VPC operates within a single AZ. This has a few advantages:
 
@@ -36,21 +34,22 @@ The VPC operates within a single AZ. This has a few advantages:
 -   multiple regions aren't too useful without redundant VPN routers, which would add complexity to the routing tables
 -   multiple regions aren't too useful without redundant app servers, and load balancers would add cost to each app
 
-## The Jumpbox
+## The Gateway
 
-The Jumpbox provides two functions:
+The Gatway provides three functions:
 
-1. An SSH jumpbox on the public internet, hence its name.
+1. An SSH jumpbox on the public internet.
 2. An OpenVPN router that connects the home network to the internal VPC.
+3. A NAT gateway instance for the private subnets.
 
 ## The VPN
 
 A site-to-site VPN is created between the home network and the aws-vpc.
 
-Each site has its own gateway:
+Each site has its own tunnel endpoint:
 
 1. The unifi router at home (192.168.127.1)
-2. The jumpbox in the vpc (192.168.127.2)
+2. The gateway in the vpc (192.168.127.2)
 
 The CIDR 192.168.64.0/18 is assigned to the VPC. The unifi gateway creates a route for this automatically.
 
@@ -61,6 +60,10 @@ Routes are created in the VPC subnets for the remaining CIDRs:
 -   192.168.192.0/18
 
 The VPN type is OpenVPN, using a shared secret. This is somewhat limiting, but it's supported natively by the USG at home.
+
+### The NAT gatway
+
+AWS NAT gateways are expensive. So instead, the traffic is routed out through the gateway instead. Technically it's double-NAT.
 
 ### Key rotation
 
@@ -74,7 +77,7 @@ openvpn --genkey --secret /dev/stdout
 Then copy-and paste the shared secret into pulumi config:
 
 ```
-pulumi config set jumpbox:openvpn-shared-secret --secret '<secret>'
+pulumi config set gateway:openvpn-shared-secret --secret '<secret>'
 pulumi up
 ```
 
