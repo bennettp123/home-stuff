@@ -291,7 +291,7 @@ export class Instance extends pulumi.ComponentResource {
                     cpuCredits: 'standard',
                 },
                 disableApiTermination: true,
-                instanceInterruptionBehaviour: 'stop',
+                instanceInterruptionBehavior: 'stop',
                 waitForFulfillment: true,
                 validUntil: `${
                     new Date(
