@@ -46,7 +46,10 @@ runcmd:
   - systemctl start openvpn@server
 `
 
-interface JumpboxArgs extends InstanceArgs {
+interface JumpboxArgs extends Partial<InstanceArgs> {
+    subnetIds: pulumi.Input<string[]>
+    vpcId: pulumi.Input<string>
+    securityGroupIds: pulumi.Input<string>[]
     dns: {
         zone: pulumi.Input<string>
         hostname: pulumi.Input<string>
@@ -78,6 +81,7 @@ export class JumpBox extends pulumi.ComponentResource {
             name,
             {
                 subnetIds: args.subnetIds,
+                instanceType: 't3a.nano', // the smollest possible instance type
                 vpcId: args.vpcId,
                 securityGroupIds: args.securityGroupIds,
                 userData,
