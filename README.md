@@ -7,7 +7,7 @@ Mostly used for home servers, etc, and probably not all that interesting to othe
 ## Quickstart
 
 ```
-AWS_PROFILE=bennettp123 pulumi up
+pulumi up
 ```
 
 ## Goals
