@@ -1,8 +1,8 @@
 # Home Stuff
 
-A sandbox/playground for doing "cloud stuff" in the cheapest ways imaginable.
+A server environment where cost is the top priority.
 
-Mostly used for home servers, etc, and probably not all that interesting to others.
+Currently used by the author for home servers and stuff.
 
 ## Quickstart
 
