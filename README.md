@@ -7,6 +7,7 @@ Currently used by the author for home servers and stuff.
 ## Quickstart
 
 ```
+pulumi login
 pulumi up
 ```
 
