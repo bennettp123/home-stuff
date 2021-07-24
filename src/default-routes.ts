@@ -1,7 +1,7 @@
 import * as awsx from '@pulumi/awsx'
 import * as pulumi from '@pulumi/pulumi'
 
-export class GatewayDefaultRoutes extends pulumi.ComponentResource {
+export class DefaultRoutes extends pulumi.ComponentResource {
     constructor(
         name: string,
         args: {
@@ -10,12 +10,7 @@ export class GatewayDefaultRoutes extends pulumi.ComponentResource {
         },
         opts?: pulumi.CustomResourceOptions,
     ) {
-        super(
-            'bennettp123:gateway-default-routes/GatewayDefaultRoutes',
-            name,
-            args,
-            opts,
-        )
+        super('bennettp123:default-routes/DefaultRoutes', name, args, opts)
 
         pulumi.output(args.vpc.privateSubnets).apply((subnets) =>
             subnets.forEach((subnet) =>

@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi'
+import { DefaultRoutes } from './default-routes'
 import { Cluster } from './ecs-cluster'
 import { Gateway } from './gateway'
-import { GatewayDefaultRoutes } from './gateway-default-routes'
 import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { Instance } from './instance'
 import './pulumi-state'
@@ -44,7 +44,7 @@ export const gateway = new Gateway('home-gateway', {
     },
 })
 
-new GatewayDefaultRoutes('home-gateway', {
+new DefaultRoutes('home-gateway', {
     vpc: homeVpc.vpc,
     interfaceId: gateway.interfaceId,
 })
