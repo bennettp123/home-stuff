@@ -2,6 +2,7 @@
     "name": "home-stuff",
     "main": "src/index.ts",
     "devDependencies": {
+        "@types/netmask": "^1.0.30",
         "@types/node": "^10.17.60",
         "prettier": "^2.3.2"
     },
@@ -11,7 +12,8 @@
         "@pulumi/docker": "^3.0.0",
         "@pulumi/pulumi": "^3.7.1",
         "@pulumi/random": "^4.2.0",
-        "ip-address": "^8.1.0"
+        "ip-address": "^8.1.0",
+        "netmask": "^2.0.2"
     },
     "scripts": {
         "preinstall": "npx only-allow pnpm"

@@ -11,7 +11,7 @@ import { Vpc } from './vpc'
 const config = new pulumi.Config('home-stuff')
 
 const homeVpc = new Vpc('home', {
-    cidrBlock: '192.168.64.0/18', // 192.168.60.0 to 192.168.127.255
+    cidrBlock: config.require<string>('vpc-cidr-block'),
     numberOfNatGateways: 0,
     numberOfAvailabilityZones: 1,
 })
@@ -41,6 +41,29 @@ export const gateway = new Gateway('home-gateway', {
     dns: {
         hostname: 'gw.home.bennettp123.com',
         zone: 'Z1LNE5PQ9LO13V',
+    },
+    natCidrs: [homeVpc.vpc.vpc.cidrBlock],
+    openvpn: {
+        tunnel: {
+            localAddress: config.require<string>(
+                'openvpn-tunnel-address-local',
+            ),
+            remoteAddress: config.require<string>(
+                'openvpn-tunnel-address-remote',
+            ),
+        },
+        listenOnPort: config.getNumber('openvpn-listen-on-port', {
+            min: 1,
+            max: 65535,
+        }),
+        remote: {
+            address: config.require<string>('home-public-ip'),
+            port: config.getNumber('openvpn-remote-port', {
+                min: 1,
+                max: 65535,
+            }),
+        },
+        routedCidrs: config.getObject<Array<string>>('home-cidr-blocks'),
     },
 })
 

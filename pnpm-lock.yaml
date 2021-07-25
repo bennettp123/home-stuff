@@ -6,19 +6,23 @@ specifiers:
   '@pulumi/docker': ^3.0.0
   '@pulumi/pulumi': ^3.7.1
   '@pulumi/random': ^4.2.0
+  '@types/netmask': ^1.0.30
   '@types/node': ^10.17.60
   ip-address: ^8.1.0
+  netmask: ^2.0.2
   prettier: ^2.3.2
 
 dependencies:
   '@pulumi/aws': 4.13.0
-  '@pulumi/awsx': 0.30.0_e9e1009ba4559c0104798b7791afe3ae
+  '@pulumi/awsx': 0.30.0_ec465dac813404c7ca1a3a9477e444b3
   '@pulumi/docker': 3.0.0
   '@pulumi/pulumi': 3.7.1
   '@pulumi/random': 4.2.0
   ip-address: 8.1.0
+  netmask: 2.0.2
 
 devDependencies:
+  '@types/netmask': 1.0.30
   '@types/node': 10.17.60
   prettier: 2.3.2
 
@@ -80,7 +84,7 @@ packages:
     dev: false
 
   /@pulumi/aws/4.13.0:
-    resolution: {integrity: sha512-zUJ+vwSPaB/GxA040nT7Uz5k6P5DTDM+MqBaNusg2AMe/yiWcqkGG9biGaVdKXGBN4tlFTn6TTK3yoJm2oOBwg==}
+    resolution: {integrity: sha512-zUJ+vwSPaB/GxA040nT7Uz5k6P5DTDM+MqBaNusg2AMe/yiWcqkGG9biGaVdKXGBN4tlFTn6TTK3yoJm2oOBwg==, tarball: '@pulumi/aws/-/aws-4.13.0.tgz'}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.7.1
@@ -91,8 +95,8 @@ packages:
       resolve: 1.20.0
     dev: false
 
-  /@pulumi/awsx/0.30.0_e9e1009ba4559c0104798b7791afe3ae:
-    resolution: {integrity: sha512-QtYVDFSkZxJ/JkAxaSwms9i/tJU2rA9F/VncCN6e8D0r29C5t4eYQhmB4chsLww9AjWJPRM7CXosDJs8+gy1Zg==}
+  /@pulumi/awsx/0.30.0_ec465dac813404c7ca1a3a9477e444b3:
+    resolution: {integrity: sha512-QtYVDFSkZxJ/JkAxaSwms9i/tJU2rA9F/VncCN6e8D0r29C5t4eYQhmB4chsLww9AjWJPRM7CXosDJs8+gy1Zg==, tarball: '@pulumi/awsx/-/awsx-0.30.0.tgz'}
     peerDependencies:
       '@pulumi/aws': ^4.0.0
       '@pulumi/pulumi': ^3.0.0
@@ -105,7 +109,7 @@ packages:
     dev: false
 
   /@pulumi/docker/3.0.0:
-    resolution: {integrity: sha512-AzPhb/ibuHBy+GGDHrY3rPJeaO5DIMqv/ABtenQdoAw8X00E3UTV+D9dDS/GRq0oJ2aDvZupIlSdrPD7eJ5jgA==}
+    resolution: {integrity: sha512-AzPhb/ibuHBy+GGDHrY3rPJeaO5DIMqv/ABtenQdoAw8X00E3UTV+D9dDS/GRq0oJ2aDvZupIlSdrPD7eJ5jgA==, tarball: '@pulumi/docker/-/docker-3.0.0.tgz'}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.7.1
@@ -138,7 +142,7 @@ packages:
     dev: false
 
   /@pulumi/random/4.2.0:
-    resolution: {integrity: sha512-zdkI6AO2W0H4UwYlKLijccBkkylH1XoqXPoZ8l5shKnOAZVa5izmLkIw2wQOT65BAwjvfczZgdNpPng9n7W06w==}
+    resolution: {integrity: sha512-zdkI6AO2W0H4UwYlKLijccBkkylH1XoqXPoZ8l5shKnOAZVa5izmLkIw2wQOT65BAwjvfczZgdNpPng9n7W06w==, tarball: '@pulumi/random/-/random-4.2.0.tgz'}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.7.1
@@ -151,6 +155,10 @@ packages:
   /@types/long/4.0.1:
     resolution: {integrity: sha512-5tXH6Bx/kNGd3MgffdmP4dy2Z+G4eaXw0SE81Tq3BNadtnMR5/ySMzX4SLEzHJzSmPNn4HIdpQsBvXMUykr58w==}
     dev: false
+
+  /@types/netmask/1.0.30:
+    resolution: {integrity: sha512-Kl1xAICLv1Y7/WsNXkPKldRMz3QmXUYMIzr3rMXnIBDy9c4/sYG7V6P6u7Ja3w+uNtNQrRudJduqVoYX/DxfZg==}
+    dev: true
 
   /@types/node/10.17.60:
     resolution: {integrity: sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw==}
@@ -488,6 +496,11 @@ packages:
     hasBin: true
     dependencies:
       minimist: 1.2.5
+    dev: false
+
+  /netmask/2.0.2:
+    resolution: {integrity: sha512-dBpDMdxv9Irdq66304OLfEmQ9tbNRFnFTuZiLo+bD+r332bBmMJ8GBLXklIXXgxd3+v9+KUnZaUR5PJMa75Gsg==}
+    engines: {node: '>= 0.4.0'}
     dev: false
 
   /normalize-package-data/2.5.0:

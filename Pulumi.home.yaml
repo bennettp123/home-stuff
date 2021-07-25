@@ -9,3 +9,13 @@ config:
   home-stuff:enable-homebridge-ecs: "false"
   home-stuff:enable-test-servers: "false"
   home-stuff:enable-vpc-endpoints: "false"
+  home-stuff:home-cidr-blocks:
+  - 192.168.0.0/18
+  - 192.168.128.0/18
+  - 192.168.192.0/18
+  home-stuff:home-public-ip: 210.10.212.154
+  home-stuff:openvpn-listen-on-port: "1194"
+  home-stuff:openvpn-remote-port: "1194"
+  home-stuff:openvpn-tunnel-address-local: 192.168.127.2
+  home-stuff:openvpn-tunnel-address-remote: 192.168.127.1
+  home-stuff:vpc-cidr-block: 192.168.64.0/18
