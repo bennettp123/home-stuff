@@ -6,24 +6,96 @@ import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 const config = new pulumi.Config('gateway')
 
 export interface GatewayArgs extends Partial<InstanceArgs> {
+    /**
+     * The underlying instance will be added to subnets with these IDs
+     */
     subnetIds: pulumi.Input<string[]>
+
+    /**
+     * The gateway will be added to the VPC with this ID
+     */
     vpcId: pulumi.Input<string>
+
+    /**
+     * Security groups with these IDs will be applied to the gateway interface
+     */
     securityGroupIds: pulumi.Input<string>[]
+
+    /**
+     * DNS settings for the gateway
+     */
     dns: {
+        /**
+         * Create DNS records (A and AAAA) for the instance in this Route53
+         * hosted zone
+         */
         zone: pulumi.Input<string>
+
+        /**
+         * The hostname for the DNS records. Can be relative to the parent
+         * zone, or fully-qualified.
+         *
+         * For example, if the parent zone is example.com, then the following
+         * hostnames will produce the same records:
+         *   - myhost.example.com
+         *   - myhost
+         */
         hostname: pulumi.Input<string>
     }
+
+    /**
+     * These CIDRs will be DNAT'ed by the gateway.
+     */
     natCidrs?: pulumi.Input<string>[]
+
+    /**
+     * OpenVPN settings for the gateway
+     */
     openvpn: {
+        /**
+         * Tunnel addresses (remote and local). This corresponds to the
+         * ifconfig entry in the openvpn config file.
+         */
         tunnel: {
+            /**
+             * The IP address within the tunnel of the gateway. This
+             * corresponds to the first address in the ifconfig entry in the
+             * openvpn config file.
+             */
             localAddress: pulumi.Input<string>
+
+            /**
+             * The IP address within the tunnel of the remote endpoint. This
+             * corresponds to the second address in the ifconfig entry in the
+             * openvpn config file.
+             */
             remoteAddress: pulumi.Input<string>
         }
+
+        /**
+         * The port for openvpn to listen on. Default: 1194
+         */
         listenOnPort?: pulumi.Input<number | undefined>
+
+        /**
+         * The public address of the remote openvpn server. Corresponds to the
+         * remote entry in the openvpn config file.
+         */
         remote: {
+            /**
+             * The IP address or hostname of the remote server.
+             */
             address: pulumi.Input<string>
+
+            /**
+             * The port of the remote server. Default: 1194
+             */
             port?: pulumi.Input<number | undefined>
         }
+
+        /**
+         * A list of CIDRs that should be routed over the VPN tunnel.
+         */
         routedCidrs?: pulumi.Input<string>[]
     }
 }
@@ -35,12 +107,39 @@ export interface GatewayArgs extends Partial<InstanceArgs> {
  *  - a NAT gateway for the private subnets
  */
 export class Gateway extends pulumi.ComponentResource {
+    /**
+     * The public IP address of the gateway instance.
+     */
     ip: pulumi.Output<string>
+
+    /**
+     * The public IP address of the gateway instance.
+     */
     publicIp: pulumi.Output<string>
+
+    /**
+     * The private IP address of the gateway instance.
+     */
     privateIp: pulumi.Output<string>
+
+    /**
+     * The IPv6 address of the gateway instance.
+     */
     ipv6: pulumi.Output<string>
-    hostname?: pulumi.Output<string>
+
+    /**
+     * The hostname of the gateway instance
+     */
+    hostname: pulumi.Output<string>
+
+    /**
+     * The instance ID of the gateway instance
+     */
     instanceId: pulumi.Output<string>
+
+    /**
+     * The ID of the network interface attached to the gatway instance
+     */
     interfaceId: pulumi.Output<string>
 
     constructor(
@@ -156,7 +255,16 @@ export class Gateway extends pulumi.ComponentResource {
 
         this.ip = instance.ip
         this.ipv6 = instance.ipv6
-        this.hostname = instance.hostname
+        this.hostname = pulumi.output(instance.hostname).apply(
+            (hostname) =>
+                hostname ??
+                (() => {
+                    throw new pulumi.ResourceError(
+                        'gateway hostname missing!',
+                        this,
+                    )
+                })(),
+        )
         this.instanceId = instance.instanceId
         this.interfaceId = instance.interfaceId
         this.publicIp = instance.publicIp!
