@@ -19,7 +19,7 @@ export interface GatewayArgs extends Partial<InstanceArgs> {
             localAddress: pulumi.Input<string>
             remoteAddress: pulumi.Input<string>
         }
-        listenOn?: pulumi.Input<number | undefined>
+        listenOnPort?: pulumi.Input<number | undefined>
         remote: {
             address: pulumi.Input<string>
             port?: pulumi.Input<number | undefined>
@@ -62,7 +62,7 @@ export class Gateway extends pulumi.ComponentResource {
                 routes,
                 args.openvpn.tunnel.localAddress,
                 args.openvpn.tunnel.remoteAddress,
-                args.openvpn.listenOn,
+                args.openvpn.listenOnPort,
                 args.openvpn.remote.address,
                 args.openvpn.remote.port,
             ])
