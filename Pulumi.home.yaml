@@ -19,3 +19,10 @@ config:
   home-stuff:openvpn-tunnel-address-local: 192.168.127.2
   home-stuff:openvpn-tunnel-address-remote: 192.168.127.1
   home-stuff:vpc-cidr-block: 192.168.64.0/18
+  instance:default-users:
+    logins:
+      bennett:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH
+        bennett@MacBook Pro 16
+    sudoers:
+    - bennett

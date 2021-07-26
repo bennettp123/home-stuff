@@ -5,31 +5,42 @@ import { Address6 } from 'ip-address'
 import { makeCloudInitUserdata } from './cloud-init-helpers'
 import { getTags } from './helpers'
 
-export const logins = {
-    bennett: [
-        'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH bennett@MacBook Pro 16',
-    ],
+export const config = new pulumi.Config('instance')
+
+export type SshKey = string
+export type DefaultInstanceSettings = {
+    logins?: {
+        [username: string]: Array<SshKey>
+    }
+    sudoers?: Array<string>
 }
 
-export const sudoers = ['bennett']
+export const defaults =
+    config.getObject<DefaultInstanceSettings>('default-users')
 
 // examples: https://cloudinit.readthedocs.io/en/latest/topics/examples.html#including-users-and-groups
-export const users = Object.entries(logins)
+export const users = Object.entries(defaults?.logins ?? [])
     .map(([name, ssh_authorized_keys]) => {
         return {
             name,
             ssh_authorized_keys,
-            ...(sudoers.includes(name)
+            ...((defaults?.sudoers ?? []).includes(name)
                 ? { sudo: 'ALL=(ALL) NOPASSWD:ALL' }
                 : {}),
         }
     })
     .filter((user) => user.ssh_authorized_keys.length > 0)
 
+/**
+ * The default userData for instance.
+ * Creates users, updates all packages, adds EPEL repo.
+ * Must be converted to cloud-init format before it's usable. This can be done
+ * using makeCloudInitUserdata in ./cloud-init-helpers
+ */
 export const userData: {} = {
     repo_upgrade: 'all',
     ssh_deletekeys: true,
-    users,
+    ...(users.length > 0 ? { users } : {}),
     repo_update: true,
     yum_repos: {
         epel: {
@@ -45,10 +56,27 @@ export const userData: {} = {
 }
 
 export interface InstanceArgs {
+    /**
+     * The instance will be added to subnets with these IDs
+     */
     subnetIds: pulumi.Input<string[]>
+    /**
+     * The instance will be added to the VPC with this ID
+     */
     vpcId: pulumi.Input<string>
+    /**
+     * Security groups with these IDs will be attached to the instance
+     */
     securityGroupIds: pulumi.Input<string>[]
+    /**
+     * The instance type. Must support either x86_64 or arm64.
+     */
     instanceType: pulumi.Input<string>
+    /**
+     * The userdata to add to the instance. If not provided, the default
+     * userdata sets up the EPEL repo, updates all packages, and creates a
+     * users (if default-users is defined in config).
+     */
     userData?: pulumi.Input<string>
     /**
      * if set, A and AAAA records will be created
@@ -107,12 +135,40 @@ export interface InstanceArgs {
  * public address, or the private address. An AAAA record will be created too.
  */
 export class Instance extends pulumi.ComponentResource {
+    /**
+     * If the instance has a public IP, then this will be the public IP.
+     * Otherwise, it will be the private IP.
+     */
     ip: pulumi.Output<string>
+
+    /**
+     * The private IP of the instance
+     */
     privateIp: pulumi.Output<string>
+
+    /**
+     * The public IP of the instance, if it has one
+     */
     publicIp?: pulumi.Output<string>
+
+    /**
+     * The IPv6 of the instance
+     */
     ipv6: pulumi.Output<string>
+
+    /**
+     * If a route53 zone was provided, the hostname of the instance
+     */
     hostname?: pulumi.Output<string>
+
+    /**
+     * The instance ID of the instance
+     */
     instanceId: pulumi.Output<string>
+
+    /**
+     * The ID of the interface attached to the instance
+     */
     interfaceId: pulumi.Output<string>
 
     constructor(
