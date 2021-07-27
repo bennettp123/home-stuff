@@ -220,15 +220,17 @@ export class Gateway extends pulumi.ComponentResource {
                             content: key,
                         },
                     ],
-                    runcmd: [
+                    bootcmd: [
                         'echo 1 > /proc/sys/net/ipv4/ip_forward',
                         'echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp',
-                        'systemctl enable openvpn@server',
-                        'systemctl start openvpn@server',
                         ...(natCidrs ?? []).map(
                             (cidr) =>
                                 `iptables -t nat -A POSTROUTING -o eth0 -s ${cidr} -j MASQUERADE`,
                         ),
+                    ],
+                    runcmd: [
+                        'systemctl enable openvpn@server',
+                        'systemctl start openvpn@server',
                     ],
                 }),
             )
