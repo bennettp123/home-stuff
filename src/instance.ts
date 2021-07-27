@@ -2,7 +2,11 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import { Address6 } from 'ip-address'
-import { makeCloudInitUserdata } from './cloud-init-helpers'
+import {
+    addHostKeys,
+    makeCloudInitUserdata,
+    SshHostKeys,
+} from './cloud-init-helpers'
 import { getTags } from './helpers'
 
 export const config = new pulumi.Config('instance')
@@ -37,8 +41,9 @@ export const users = Object.entries(defaults?.logins ?? [])
  * Must be converted to cloud-init format before it's usable. This can be done
  * using makeCloudInitUserdata in ./cloud-init-helpers
  */
-export const userData: {} = {
+export const userData = {
     repo_upgrade: 'all',
+    packages: ['jq', 'bind-utils', 'traceroute'],
     ssh_deletekeys: true,
     ...(users.length > 0 ? { users } : {}),
     repo_update: true,
@@ -52,6 +57,9 @@ export const userData: {} = {
             gpgcheck: true,
             gpgkey: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7',
         },
+    },
+    ssh: {
+        emit_keys_to_console: false,
     },
 }
 
@@ -114,6 +122,11 @@ export interface InstanceArgs {
          */
         sourceDestCheck?: boolean
     }
+    /**
+     * Add SSH host keys. Any keys not specified will be generated
+     * automatically by cloud-init
+     */
+    sshHostKeys?: SshHostKeys
 }
 
 /**
@@ -347,7 +360,16 @@ export class Instance extends pulumi.ComponentResource {
                           ],
                       }
                     : networkSettings),
-                userData: args.userData ?? makeCloudInitUserdata(userData),
+                userData:
+                    args.userData ??
+                    makeCloudInitUserdata({
+                        ...(args.sshHostKeys
+                            ? addHostKeys(
+                                  userData as {},
+                                  args.sshHostKeys ?? {},
+                              )
+                            : userData),
+                    }),
                 rootBlockDevice: {
                     deleteOnTermination: true,
                     volumeSize: 4,

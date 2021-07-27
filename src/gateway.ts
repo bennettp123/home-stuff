@@ -5,6 +5,15 @@ import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 
 const config = new pulumi.Config('gateway')
 
+const ed25519Private = config.getSecret<string>('ssh-host-key-ed25519-private')
+const ed25519Public = config.getSecret<string>('ssh-host-key-ed25519-public')
+const ecdsaPrivate = config.getSecret<string>('ssh-host-key-dsa-private')
+const ecdsaPublic = config.getSecret<string>('ssh-host-key-ecdsa-public')
+const dsaPrivate = config.getSecret<string>('ssh-host-key-dsa-private')
+const dsaPublic = config.getSecret<string>('ssh-host-key-dsa-public')
+const rsaPrivate = config.getSecret<string>('ssh-host-key-rsa-private')
+const rsaPublic = config.getSecret<string>('ssh-host-key-rsa-public')
+
 export interface GatewayArgs extends Partial<InstanceArgs> {
     /**
      * The underlying instance will be added to subnets with these IDs
@@ -199,7 +208,7 @@ export class Gateway extends pulumi.ComponentResource {
             .apply(([key, natCidrs, openVpnConfig]) =>
                 makeCloudInitUserdata({
                     ...defaultUserData,
-                    packages: ['openvpn', 'bind-utils', 'traceroute'],
+                    packages: ['openvpn', ...defaultUserData.packages],
                     write_files: [
                         {
                             path: '/etc/cron.d/automatic-upgrades',
@@ -220,6 +229,7 @@ export class Gateway extends pulumi.ComponentResource {
                             content: key,
                         },
                     ],
+                    ssh_keys: {},
                     bootcmd: [
                         'echo 1 > /proc/sys/net/ipv4/ip_forward',
                         'echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp',
@@ -251,6 +261,16 @@ export class Gateway extends pulumi.ComponentResource {
                     sourceDestCheck: false,
                 },
                 dns: args.dns,
+                sshHostKeys: {
+                    ed25519Private,
+                    ed25519Public,
+                    ecdsaPrivate,
+                    ecdsaPublic,
+                    dsaPrivate,
+                    dsaPublic,
+                    rsaPrivate,
+                    rsaPublic,
+                },
             },
             { parent: this },
         )
