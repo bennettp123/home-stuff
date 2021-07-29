@@ -118,7 +118,7 @@ export function addHostKeys(
                            * RSA doesn't work for some reason.
                            * DSA probably works, but it's old and weak.
                            */
-
+                          /*
                           ...(args.rsa
                               ? (() => {
                                     pulumi.log.warn(
@@ -127,8 +127,8 @@ export function addHostKeys(
                                     return {}
                                 })()
                               : {}),
-
-                          ...(args.rsa
+*/
+                          ...(args.dsa
                               ? (() => {
                                     pulumi.log.warn(
                                         `ignoring dsa keypair (it's old and weak)`,
@@ -137,17 +137,16 @@ export function addHostKeys(
                                 })()
                               : {}),
 
-                          /*
-                      ...(args.rsa
-                          ? {
-                                rsa_private: args.rsa,
-                            }
-                          : {}),
-                      ...(args.rsaPub
-                          ? {
-                                rsa_public: args.rsaPub,
-                            }
-                          : {}),*/
+                          ...(args.rsa
+                              ? {
+                                    rsa_private: args.rsa,
+                                }
+                              : {}),
+                          ...(args.rsaPub
+                              ? {
+                                    rsa_public: args.rsaPub,
+                                }
+                              : {}),
                           /*
                       ...(args.dsa
                           ? {

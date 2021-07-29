@@ -9,10 +9,8 @@ const config = new pulumi.Config('gateway')
 const sshHostKeys: pulumi.Output<SshHostKeys> = packObject<string | undefined>({
     ed25519: config.getSecret<string>('ssh-host-key-ed25519'),
     ed25519Pub: config.getSecret<string>('ssh-host-key-ed25519-pub'),
-    ecdsa: config.getSecret<string>('ssh-host-key-dsa'),
+    ecdsa: config.getSecret<string>('ssh-host-key-ecdsa'),
     ecdsaPub: config.getSecret<string>('ssh-host-key-ecdsa-pub'),
-    dsa: config.getSecret<string>('ssh-host-key-dsa'),
-    dsaPub: config.getSecret<string>('ssh-host-key-dsa-pub'),
     rsa: config.getSecret<string>('ssh-host-key-rsa'),
     rsaPub: config.getSecret<string>('ssh-host-key-rsa-pub'),
 })
