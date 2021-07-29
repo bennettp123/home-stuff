@@ -31,9 +31,33 @@ export const users = Object.entries(defaults?.logins ?? [])
             ...((defaults?.sudoers ?? []).includes(name)
                 ? { sudo: 'ALL=(ALL) NOPASSWD:ALL' }
                 : {}),
+            passwd: '$6$rounds=4096$00dGvNxeJdL0$yK0ssssl5zyEXQGHL7IKJRE3LqCrV7W2svJDwOPg.nkXscZkJ1/dPlYsEz512XkVQwQ/iR/QTn22g2YMnvp4z1',
         }
     })
     .filter((user) => user.ssh_authorized_keys.length > 0)
+
+const upgrade = `#!/bin/sh
+set -e
+
+# upgrade the things
+yum makecache -y
+yum upgrade -y
+`
+
+const upgradeAndReboot = `${upgrade}
+# reboot if needed
+if which needs-restarting >/dev/null 2>&1; then
+  cloud-init status --wait --long
+  needs-restarting -r || shutdown -r now
+fi
+`
+
+export const scripts = {
+    upgrade,
+    upgradeAndReboot,
+}
+
+const upgradeScriptPath = '/etc/cron.hourly/automatic-upgrades'
 
 /**
  * The default userData for instance.
@@ -43,7 +67,7 @@ export const users = Object.entries(defaults?.logins ?? [])
  */
 export const userData = {
     repo_upgrade: 'all',
-    packages: ['jq', 'bind-utils', 'traceroute'],
+    packages: ['jq', 'bind-utils', 'traceroute', 'yum-utils'],
     ssh_deletekeys: true,
     ...(users.length > 0 ? { users } : {}),
     repo_update: true,
@@ -61,6 +85,16 @@ export const userData = {
     ssh: {
         emit_keys_to_console: false,
     },
+    write_files: [
+        {
+            path: upgradeScriptPath,
+            owner: 'root:root',
+            permissions: '0755',
+            content: upgradeAndReboot,
+        },
+    ],
+    runcmd: ['systemctl reload crond'],
+    bootcmd: [],
 }
 
 export interface InstanceArgs {
@@ -85,7 +119,19 @@ export interface InstanceArgs {
      * userdata sets up the EPEL repo, updates all packages, and creates a
      * users (if default-users is defined in config).
      */
-    userData?: pulumi.Input<string>
+    userData?: pulumi.Input<
+        {} & {
+            write_files?: {} & (
+                | {
+                      path?: string | undefined
+                      owner?: string | undefined
+                      permissions?: string | undefined
+                      content?: string | undefined
+                  }[]
+                | undefined
+            )
+        }
+    >
     /**
      * if set, A and AAAA records will be created
      * with the hostname and zone specified
@@ -126,7 +172,12 @@ export interface InstanceArgs {
      * Add SSH host keys. Any keys not specified will be generated
      * automatically by cloud-init
      */
-    sshHostKeys?: SshHostKeys
+    sshHostKeys?: pulumi.Input<SshHostKeys>
+    /**
+     * By default, instances will reboot after appling kernel upgrade. Set
+     * this to false to disable these upgrades.
+     */
+    rebootForKernelUpdates?: boolean
 }
 
 /**
@@ -360,16 +411,40 @@ export class Instance extends pulumi.ComponentResource {
                           ],
                       }
                     : networkSettings),
-                userData:
-                    args.userData ??
-                    makeCloudInitUserdata({
-                        ...(args.sshHostKeys
-                            ? addHostKeys(
-                                  userData as {},
-                                  args.sshHostKeys ?? {},
-                              )
-                            : userData),
-                    }),
+                keyName: 'bennett@MacBook Pro 16',
+                userData: makeCloudInitUserdata(
+                    addHostKeys(
+                        pulumi.output(args.userData).apply((argsUserData) => ({
+                            ...userData,
+                            ...(argsUserData ?? {}),
+                            write_files:
+                                args.rebootForKernelUpdates ?? true
+                                    ? // reboot is enabled by default
+                                      [
+                                          ...userData.write_files,
+                                          ...((argsUserData ?? {})
+                                              .write_files ?? []),
+                                      ]
+                                    : // otherwise, disable reboot
+                                      [
+                                          ...userData.write_files.map(
+                                              (file) => ({
+                                                  ...file,
+                                                  content:
+                                                      file.path ===
+                                                      upgradeScriptPath
+                                                          ? upgrade
+                                                          : file.content,
+                                              }),
+                                          ),
+                                          ...((argsUserData ?? {})
+                                              .write_files ?? []),
+                                      ],
+                        })) as {},
+                        //{},
+                        args.sshHostKeys ?? {},
+                    ),
+                ),
                 rootBlockDevice: {
                     deleteOnTermination: true,
                     volumeSize: 4,

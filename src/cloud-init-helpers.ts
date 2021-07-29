@@ -1,126 +1,167 @@
 import * as pulumi from '@pulumi/pulumi'
 
 export function makeCloudInitUserdata(
-    o: pulumi.Input<{}>,
+    userData: pulumi.Input<{}>,
 ): pulumi.Output<string> {
-    return pulumi.interpolate`#cloud-config
-${JSON.stringify(o)}
-`
-}
-
-export function addCmds(
-    userdata: pulumi.Input<
-        {} & {
-            runcmd?: pulumi.Input<string>[] | pulumi.Input<string[]> | undefined
-        }
-    >,
-    cmds: pulumi.Input<string[]> | pulumi.Input<string>[],
-) {
     return pulumi
-        .all([userdata, cmds])
-        .apply(
-            ([userdata, cmds]) =>
-                (userdata.runcmd = [...(userdata.runcmd ?? []), ...cmds]),
+        .output(userData)
+        .apply((userData) =>
+            ['#cloud-config', JSON.stringify(userData).trimStart()].join('\n'),
         )
 }
 
-export function addCmd(
-    userdata: pulumi.Input<
+export function addCmds(
+    userData: pulumi.Input<
         {} & {
-            runcmd?: pulumi.Input<string>[] | pulumi.Input<string[]> | undefined
+            runcmd?: pulumi.Input<string>[] | undefined
+        }
+    >,
+    cmds: pulumi.Input<string>[],
+) {
+    return pulumi.all([userData, cmds]).apply(([userData, cmds]) => ({
+        ...userData,
+        runcmd: [...(userData.runcmd ?? []), ...cmds],
+    }))
+}
+
+export function addCmd(
+    userData: pulumi.Input<
+        {} & {
+            runcmd?: pulumi.Input<string>[] | undefined
         }
     >,
     cmd: pulumi.Input<string>,
 ) {
-    return addCmds(
-        userdata,
-        pulumi.output(cmd).apply((cmd) => [cmd]),
-    )
+    return addCmds(userData, [cmd])
 }
 
 export type SshHostKeys = {
-    rsaPrivate?: pulumi.Input<string>
-    rsaPublic?: pulumi.Input<string>
-    dsaPrivate?: pulumi.Input<string>
-    dsaPublic?: pulumi.Input<string>
-    ecdsaPrivate?: pulumi.Input<string>
-    ecdsaPublic?: pulumi.Input<string>
-    ed25519Private?: pulumi.Input<string>
-    ed25519Public?: pulumi.Input<string>
+    rsa?: string
+    rsaPub?: string
+    dsa?: string
+    dsaPub?: string
+    ecdsa?: string
+    ecdsaPub?: string
+    ed25519?: string
+    ed25519Pub?: string
 }
 
 export function addHostKeys(
-    userdata: pulumi.Input<{} & { ssh_keys?: SshHostKeys | undefined }>,
-    args: SshHostKeys,
+    userData: pulumi.Input<
+        {} & { ssh_keys?: SshHostKeys | undefined; ssh_genkeytypes?: string[] }
+    >,
+    args: pulumi.Input<SshHostKeys>,
 ) {
-    return pulumi.output(userdata).apply((userdata) =>
-        pulumi
-            .all([
-                args.rsaPrivate,
-                args.rsaPublic,
-                args.dsaPrivate,
-                args.dsaPublic,
-                args.ecdsaPrivate,
-                args.ecdsaPublic,
-                args.ed25519Private,
-                args.ed25519Public,
-            ])
-            .apply(
-                ([
-                    rsa_private,
-                    rsa_public,
-                    dsa_private,
-                    dsa_public,
-                    ecdsa_private,
-                    ecdsa_public,
-                    ed25519_private,
-                    ed25519_public,
-                ]) =>
-                    (userdata.ssh_keys = {
-                        ...(userdata.ssh_keys ?? {}),
-                        ...{
-                            ...(rsa_private
-                                ? {
-                                      rsa_private,
-                                  }
-                                : {}),
-                            ...(rsa_public
-                                ? {
-                                      rsa_public,
-                                  }
-                                : {}),
-                            ...(dsa_private
-                                ? {
-                                      dsa_private,
-                                  }
-                                : {}),
-                            ...(dsa_public
-                                ? {
-                                      dsa_public,
-                                  }
-                                : {}),
-                            ...(ecdsa_private
-                                ? {
-                                      ecdsa_private,
-                                  }
-                                : {}),
-                            ...(ecdsa_public
-                                ? {
-                                      ecdsa_public,
-                                  }
-                                : {}),
-                            ...(ed25519_private
-                                ? {
-                                      ed25519_private,
-                                  }
-                                : {}),
-                            ...(ed25519_public
-                                ? {
-                                      ed25519_public,
-                                  }
-                                : {}),
-                        },
-                    }),
-            ),
-    )
+    return pulumi.all([userData, args]).apply(([userData, args]) => {
+        if ((args.ecdsa && !args.ecdsaPub) || (!args.ecdsa && args.ecdsaPub)) {
+            throw new pulumi.RunError(
+                'one or more key missing from ecda ssh keypair',
+            )
+        }
+        if (
+            (args.ed25519 && !args.ed25519Pub) ||
+            (!args.ed25519 && args.ed25519Pub)
+        ) {
+            throw new pulumi.RunError(
+                'one or more key missing from ecda ssh keypair',
+            )
+        }
+        return {
+            ...userData,
+            ...(Object.values(args).some((e) => e !== undefined)
+                ? {
+                      ssh_genkeytypes: [
+                          'ecdsa',
+                          'ed25519',
+                          /*
+                      ...(userData.ssh_genkeytypes ?? []),
+                      ...(args.ecdsa &&
+                      args.ecdsaPub &&
+                      (userData.ssh_genkeytypes ?? []).findIndex(
+                          (e) => e === 'ecdsa',
+                      ) !== -1
+                          ? ['ecdsa']
+                          : []),
+                      ...(args.ed25519 &&
+                      args.ed25519Pub &&
+                      (userData.ssh_genkeytypes ?? []).findIndex(
+                          (e) => e === 'ed25519',
+                      ) !== -1
+                          ? ['ed25519']
+                          : []),
+                      */
+                      ],
+                      ssh_keys: {
+                          ...(userData.ssh_keys ?? {}),
+                          ...(args.ecdsa
+                              ? {
+                                    ecdsa_private: args.ecdsa,
+                                }
+                              : {}),
+                          ...(args.ecdsaPub
+                              ? {
+                                    ecdsa_public: args.ecdsaPub,
+                                }
+                              : {}),
+                          ...(args.ed25519
+                              ? {
+                                    ed25519_private: args.ed25519,
+                                }
+                              : {}),
+                          ...(args.ed25519Pub
+                              ? {
+                                    ed25519_public: args.ed25519Pub,
+                                }
+                              : {}),
+
+                          /**
+                           * RSA doesn't work for some reason.
+                           * DSA probably works, but it's old and weak.
+                           */
+
+                          ...(args.rsa
+                              ? (() => {
+                                    pulumi.log.warn(
+                                        `ignoring rsa keypair (it prevents sshd from starting for some reason)`,
+                                    )
+                                    return {}
+                                })()
+                              : {}),
+
+                          ...(args.rsa
+                              ? (() => {
+                                    pulumi.log.warn(
+                                        `ignoring dsa keypair (it's old and weak)`,
+                                    )
+                                    return {}
+                                })()
+                              : {}),
+
+                          /*
+                      ...(args.rsa
+                          ? {
+                                rsa_private: args.rsa,
+                            }
+                          : {}),
+                      ...(args.rsaPub
+                          ? {
+                                rsa_public: args.rsaPub,
+                            }
+                          : {}),*/
+                          /*
+                      ...(args.dsa
+                          ? {
+                                dsa_private: args.dsa,
+                            }
+                          : {}),
+                      ...(args.dsaPub
+                          ? {
+                                dsa_public: args.dsaPub,
+                            }
+                          : {}),*/
+                      },
+                  }
+                : userData),
+        }
+    })
 }

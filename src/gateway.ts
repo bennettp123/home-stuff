@@ -1,18 +1,21 @@
 import * as pulumi from '@pulumi/pulumi'
 import { Netmask } from 'netmask'
-import { makeCloudInitUserdata } from './cloud-init-helpers'
+import { SshHostKeys } from './cloud-init-helpers'
 import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
+import { packObject } from './pulumi-helpers'
 
 const config = new pulumi.Config('gateway')
 
-const ed25519Private = config.getSecret<string>('ssh-host-key-ed25519-private')
-const ed25519Public = config.getSecret<string>('ssh-host-key-ed25519-public')
-const ecdsaPrivate = config.getSecret<string>('ssh-host-key-dsa-private')
-const ecdsaPublic = config.getSecret<string>('ssh-host-key-ecdsa-public')
-const dsaPrivate = config.getSecret<string>('ssh-host-key-dsa-private')
-const dsaPublic = config.getSecret<string>('ssh-host-key-dsa-public')
-const rsaPrivate = config.getSecret<string>('ssh-host-key-rsa-private')
-const rsaPublic = config.getSecret<string>('ssh-host-key-rsa-public')
+const sshHostKeys: pulumi.Output<SshHostKeys> = packObject<string | undefined>({
+    ed25519: config.getSecret<string>('ssh-host-key-ed25519'),
+    ed25519Pub: config.getSecret<string>('ssh-host-key-ed25519-pub'),
+    ecdsa: config.getSecret<string>('ssh-host-key-dsa'),
+    ecdsaPub: config.getSecret<string>('ssh-host-key-ecdsa-pub'),
+    dsa: config.getSecret<string>('ssh-host-key-dsa'),
+    dsaPub: config.getSecret<string>('ssh-host-key-dsa-pub'),
+    rsa: config.getSecret<string>('ssh-host-key-rsa'),
+    rsaPub: config.getSecret<string>('ssh-host-key-rsa-pub'),
+})
 
 export interface GatewayArgs extends Partial<InstanceArgs> {
     /**
@@ -205,45 +208,39 @@ export class Gateway extends pulumi.ComponentResource {
                 args.natCidrs,
                 openVpnConfig,
             ])
-            .apply(([key, natCidrs, openVpnConfig]) =>
-                makeCloudInitUserdata({
-                    ...defaultUserData,
-                    packages: ['openvpn', ...defaultUserData.packages],
-                    write_files: [
-                        {
-                            path: '/etc/cron.d/automatic-upgrades',
-                            owner: 'root:root',
-                            permissions: '0644',
-                            content: '0 * * * * root yum upgrade -y',
-                        },
-                        {
-                            path: '/etc/openvpn/server.conf',
-                            owner: 'root:root',
-                            permissions: '0644',
-                            content: openVpnConfig,
-                        },
-                        {
-                            path: '/etc/openvpn/static.key',
-                            owner: 'root:root',
-                            permissions: '0600',
-                            content: key,
-                        },
-                    ],
-                    ssh_keys: {},
-                    bootcmd: [
-                        'echo 1 > /proc/sys/net/ipv4/ip_forward',
-                        'echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp',
-                        ...(natCidrs ?? []).map(
-                            (cidr) =>
-                                `iptables -t nat -A POSTROUTING -o eth0 -s ${cidr} -j MASQUERADE`,
-                        ),
-                    ],
-                    runcmd: [
-                        'systemctl enable openvpn@server',
-                        'systemctl start openvpn@server',
-                    ],
-                }),
-            )
+            .apply(([key, natCidrs, openVpnConfig]) => ({
+                ...defaultUserData,
+                packages: [...defaultUserData.packages, 'openvpn'],
+                write_files: [
+                    ...defaultUserData.write_files,
+                    {
+                        path: '/etc/openvpn/server.conf',
+                        owner: 'root:root',
+                        permissions: '0644',
+                        content: openVpnConfig,
+                    },
+                    {
+                        path: '/etc/openvpn/static.key',
+                        owner: 'root:root',
+                        permissions: '0600',
+                        content: key,
+                    },
+                ],
+                bootcmd: [
+                    ...defaultUserData.bootcmd,
+                    'echo 1 > /proc/sys/net/ipv4/ip_forward',
+                    'echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp',
+                    ...(natCidrs ?? []).map(
+                        (cidr) =>
+                            `iptables -t nat -A POSTROUTING -o eth0 -s ${cidr} -j MASQUERADE`,
+                    ),
+                ],
+                runcmd: [
+                    ...defaultUserData.runcmd,
+                    'systemctl enable openvpn@server',
+                    'systemctl start openvpn@server',
+                ],
+            }))
 
         const instance = new Instance(
             name,
@@ -261,16 +258,7 @@ export class Gateway extends pulumi.ComponentResource {
                     sourceDestCheck: false,
                 },
                 dns: args.dns,
-                sshHostKeys: {
-                    ed25519Private,
-                    ed25519Public,
-                    ecdsaPrivate,
-                    ecdsaPublic,
-                    dsaPrivate,
-                    dsaPublic,
-                    rsaPrivate,
-                    rsaPublic,
-                },
+                sshHostKeys,
             },
             { parent: this },
         )
