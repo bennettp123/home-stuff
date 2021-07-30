@@ -27,8 +27,12 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                 `${name}-kms`,
                 {
                     eventPattern: JSON.stringify({
-                        source: ['aws.health'],
-                        'detail-type': ['AWS Health Event'],
+                        source: ['aws.kms'],
+                        'detail-type': [
+                            'KMS Imported Key Material Expiration',
+                            'KMS CMK Rotation',
+                            'KMS CMK Deletion',
+                        ],
                     }),
                 },
                 { parent: this },
