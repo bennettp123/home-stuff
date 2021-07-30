@@ -4,11 +4,18 @@ import { Cluster } from './ecs-cluster'
 import { Gateway } from './gateway'
 import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { Instance } from './instance'
+import { DefaultNotifications, NotificationsTopic } from './notifications'
 import './pulumi-state'
 import { SecurityGroups } from './security-groups'
 import { Vpc } from './vpc'
 
 const config = new pulumi.Config('home-stuff')
+
+const notifications = new NotificationsTopic('home-notifications', {})
+
+new DefaultNotifications('home', {
+    topicArn: notifications.topicArn,
+})
 
 const homeVpc = new Vpc('home', {
     cidrBlock: config.require<string>('vpc-cidr-block'),
@@ -43,6 +50,7 @@ export const gateway = new Gateway('home-gateway', {
         zone: 'Z1LNE5PQ9LO13V',
     },
     natCidrs: [homeVpc.vpc.vpc.cidrBlock],
+    notificationsTopicArn: notifications.topicArn,
     openvpn: {
         tunnel: {
             localAddress: config.require<string>(

@@ -1,8 +1,8 @@
 import * as pulumi from '@pulumi/pulumi'
 import { Netmask } from 'netmask'
-import { SshHostKeys } from './cloud-init-helpers'
+import { SshHostKeys } from './helpers'
+import { packObject } from './helpers/pulumi-helpers'
 import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
-import { packObject } from './pulumi-helpers'
 
 const config = new pulumi.Config('gateway')
 
@@ -108,6 +108,11 @@ export interface GatewayArgs extends Partial<InstanceArgs> {
          */
         routedCidrs?: pulumi.Input<string>[]
     }
+
+    /**
+     * An SNS topic for sending notifications
+     */
+    notificationsTopicArn: pulumi.Input<string>
 }
 
 /**
@@ -257,6 +262,7 @@ export class Gateway extends pulumi.ComponentResource {
                 },
                 dns: args.dns,
                 sshHostKeys,
+                notificationsTopicArn: args.notificationsTopicArn,
             },
             { parent: this },
         )

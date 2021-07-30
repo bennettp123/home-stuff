@@ -4,10 +4,10 @@ import * as random from '@pulumi/random'
 import { Address6 } from 'ip-address'
 import {
     addHostKeys,
+    getTags,
     makeCloudInitUserdata,
     SshHostKeys,
-} from './cloud-init-helpers'
-import { getTags } from './helpers'
+} from './helpers'
 
 export const config = new pulumi.Config('instance')
 
@@ -178,6 +178,10 @@ export interface InstanceArgs {
      * this to false to disable these upgrades.
      */
     rebootForKernelUpdates?: boolean
+    /**
+     * An SNS topic for sending notifications
+     */
+    notificationsTopicArn?: pulumi.Input<string>
 }
 
 /**
@@ -581,6 +585,39 @@ export class Instance extends pulumi.ComponentResource {
             this.hostname = pulumi
                 .all([aaaa.fqdn, a.fqdn])
                 .apply(([fqdn, _]) => fqdn)
+        }
+
+        if (args.notificationsTopicArn !== undefined) {
+            const rule = new aws.cloudwatch.EventRule(
+                `${name}-ec2-events`,
+                {
+                    eventPattern: pulumi
+                        .output(this.instanceId)
+                        .apply((instanceId) =>
+                            JSON.stringify({
+                                source: ['aws.ec2'],
+                                'detail-type': [
+                                    'EC2 Instance State-change Notification',
+                                    'EC2 Instance Rebalance Recommendation',
+                                    'EC2 Spot Instance Interruption Warning',
+                                ],
+                                detail: {
+                                    'instance-id': [instanceId],
+                                },
+                            }),
+                        ),
+                },
+                { parent: this },
+            )
+
+            new aws.cloudwatch.EventTarget(
+                `${name}-ec2-events`,
+                {
+                    rule: rule.id,
+                    arn: args.notificationsTopicArn,
+                },
+                { parent: this },
+            )
         }
     }
 }
