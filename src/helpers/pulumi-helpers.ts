@@ -1,3 +1,4 @@
+import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 
 /**
@@ -19,4 +20,25 @@ export function packObject<T>(obj: { [name: string]: pulumi.Input<T> }) {
  */
 export function packArray<T>(arr: T[]) {
     return pulumi.all(arr)
+}
+
+export function makeAwsProvidersForRegions(
+    name: string,
+    args: {
+        regions: aws.Region[]
+        providerArgs?: aws.ProviderArgs
+    },
+    opts?: pulumi.CustomResourceOptions,
+) {
+    return args.regions.map((region) => ({
+        region,
+        provider: new aws.Provider(
+            `${name}-${region}`,
+            {
+                ...(args.providerArgs ?? {}),
+                region,
+            },
+            opts,
+        ),
+    }))
 }

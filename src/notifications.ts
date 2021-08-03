@@ -2,6 +2,9 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import { getTags } from './helpers'
 
+const config = new pulumi.Config('common')
+const accountNumber = config.require<string>('aws-account-number')
+
 export class DefaultNotifications extends pulumi.ComponentResource {
     constructor(
         name: string,
@@ -13,6 +16,18 @@ export class DefaultNotifications extends pulumi.ComponentResource {
         super('bennettp123:notifications/DefaultNotifications', name, {}, opts)
 
         const defaultRules = {
+            acm: new aws.cloudwatch.EventRule(
+                `${name}-acm`,
+                {
+                    eventPattern: JSON.stringify({
+                        source: ['aws.acm'],
+                        'detail-type': [
+                            'ACM Certificate Approaching Expiration',
+                        ],
+                    }),
+                },
+                pulumi.mergeOptions(opts, { parent: this }),
+            ),
             health: new aws.cloudwatch.EventRule(
                 `${name}-health`,
                 {
@@ -21,7 +36,7 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                         'detail-type': ['AWS Health Event'],
                     }),
                 },
-                { parent: this },
+                pulumi.mergeOptions(opts, { parent: this }),
             ),
             kms: new aws.cloudwatch.EventRule(
                 `${name}-kms`,
@@ -35,7 +50,7 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                         ],
                     }),
                 },
-                { parent: this },
+                pulumi.mergeOptions(opts, { parent: this }),
             ),
             'savings-plans': new aws.cloudwatch.EventRule(
                 `${name}-savings-plans`,
@@ -48,7 +63,7 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                         ],
                     }),
                 },
-                { parent: this },
+                pulumi.mergeOptions(opts, { parent: this }),
             ),
             'security-hub': new aws.cloudwatch.EventRule(
                 `${name}-security-hub`,
@@ -58,7 +73,7 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                         'detail-type': ['Security Hub Insight Results'],
                     }),
                 },
-                { parent: this },
+                pulumi.mergeOptions(opts, { parent: this }),
             ),
             support: new aws.cloudwatch.EventRule(
                 `${name}-support`,
@@ -67,7 +82,7 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                         source: ['aws.support'],
                     }),
                 },
-                { parent: this },
+                pulumi.mergeOptions(opts, { parent: this }),
             ),
             'trusted-advisor': new aws.cloudwatch.EventRule(
                 `${name}-trusted-advisor`,
@@ -82,7 +97,7 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                         },
                     }),
                 },
-                { parent: this },
+                pulumi.mergeOptions(opts, { parent: this }),
             ),
         }
 
@@ -94,7 +109,7 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                         rule: rule.id,
                         arn: args.topicArn,
                     },
-                    { parent: this },
+                    pulumi.mergeOptions(opts, { parent: this }),
                 ),
         )
     }
@@ -108,10 +123,6 @@ export class NotificationsTopic extends pulumi.ComponentResource {
         opts?: pulumi.ComponentResourceOptions,
     ) {
         super('bennettp123:notifications/NotificationsTopic', name, {}, opts)
-
-        const accountNumber = aws
-            .getCallerIdentity({ parent: this })
-            .then((account) => account.accountId)
 
         const topic = new aws.sns.Topic(
             `${name}-topic`,
@@ -129,88 +140,88 @@ export class NotificationsTopic extends pulumi.ComponentResource {
                     Name: name,
                 }),
             },
-            { parent: this, ignoreChanges: ['policy'] },
+            pulumi.mergeOptions(opts, {
+                parent: this,
+                ignoreChanges: ['policy'],
+            }),
         )
 
         const policy = new aws.sns.TopicPolicy(`${name}-topic-policy`, {
             arn: topic.arn,
-            policy: topic.arn.apply(
-                async (topicArn) =>
-                    await accountNumber.then((accountNumber) =>
-                        aws.iam
-                            .getPolicyDocument({
-                                version: '2008-10-17',
-                                statements: [
-                                    {
-                                        sid: 'allow-managing-by-this-account',
-                                        effect: 'Allow',
-                                        principals: [
-                                            {
-                                                type: 'AWS',
-                                                identifiers: ['*'],
-                                            },
-                                        ],
-                                        actions: [
-                                            'SNS:Publish',
-                                            'SNS:RemovePermission',
-                                            'SNS:SetTopicAttributes',
-                                            'SNS:DeleteTopic',
-                                            'SNS:ListSubscriptionsByTopic',
-                                            'SNS:GetTopicAttributes',
-                                            'SNS:Receive',
-                                            'SNS:AddPermission',
-                                            'SNS:Subscribe',
-                                        ],
-                                        resources: [topicArn],
-                                        conditions: [
-                                            {
-                                                test: 'StringEquals',
-                                                variable: 'AWS:SourceOwner',
-                                                values: [accountNumber],
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        sid: 'allow-publishing-by-this-account-and-eventbridge',
-                                        effect: 'Allow',
-                                        principals: [
-                                            {
-                                                type: 'AWS',
-                                                identifiers: [
-                                                    `arn:aws:iam::${accountNumber}:root`,
-                                                ],
-                                            },
-                                            {
-                                                type: 'Service',
-                                                identifiers: [
-                                                    'events.amazonaws.com',
-                                                ],
-                                            },
-                                        ],
-                                        actions: ['SNS:Publish'],
-                                        resources: [topicArn],
-                                    },
-                                    {
-                                        sid: 'allow-this-account-to-subscribe-and-recieve',
-                                        effect: 'Allow',
-                                        principals: [
-                                            {
-                                                type: 'AWS',
-                                                identifiers: [
-                                                    `arn:aws:iam::${accountNumber}:root`,
-                                                ],
-                                            },
-                                        ],
-                                        actions: [
-                                            'SNS:Subscribe',
-                                            'SNS:Receive',
-                                        ],
-                                        resources: [topicArn],
-                                    },
-                                ],
-                            })
-                            .then((p) => p.json),
-                    ),
+            policy: topic.arn.apply((topicArn) =>
+                aws.iam
+                    .getPolicyDocument(
+                        {
+                            version: '2008-10-17',
+                            statements: [
+                                {
+                                    sid: 'allow-managing-by-this-account',
+                                    effect: 'Allow',
+                                    principals: [
+                                        {
+                                            type: 'AWS',
+                                            identifiers: ['*'],
+                                        },
+                                    ],
+                                    actions: [
+                                        'SNS:Publish',
+                                        'SNS:RemovePermission',
+                                        'SNS:SetTopicAttributes',
+                                        'SNS:DeleteTopic',
+                                        'SNS:ListSubscriptionsByTopic',
+                                        'SNS:GetTopicAttributes',
+                                        'SNS:Receive',
+                                        'SNS:AddPermission',
+                                        'SNS:Subscribe',
+                                    ],
+                                    resources: [topicArn],
+                                    conditions: [
+                                        {
+                                            test: 'StringEquals',
+                                            variable: 'AWS:SourceOwner',
+                                            values: [accountNumber],
+                                        },
+                                    ],
+                                },
+                                {
+                                    sid: 'allow-publishing-by-this-account-and-eventbridge',
+                                    effect: 'Allow',
+                                    principals: [
+                                        {
+                                            type: 'AWS',
+                                            identifiers: [
+                                                `arn:aws:iam::${accountNumber}:root`,
+                                            ],
+                                        },
+                                        {
+                                            type: 'Service',
+                                            identifiers: [
+                                                'events.amazonaws.com',
+                                            ],
+                                        },
+                                    ],
+                                    actions: ['SNS:Publish'],
+                                    resources: [topicArn],
+                                },
+                                {
+                                    sid: 'allow-this-account-to-subscribe-and-recieve',
+                                    effect: 'Allow',
+                                    principals: [
+                                        {
+                                            type: 'AWS',
+                                            identifiers: [
+                                                `arn:aws:iam::${accountNumber}:root`,
+                                            ],
+                                        },
+                                    ],
+                                    actions: ['SNS:Subscribe', 'SNS:Receive'],
+                                    resources: [topicArn],
+                                },
+                            ],
+                        },
+                        pulumi.mergeOptions(opts, { parent: this }),
+                    )
+                    .then((p) => p.json),
             ),
         })
 

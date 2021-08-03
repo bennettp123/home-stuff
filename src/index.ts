@@ -1,9 +1,11 @@
+import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import { DefaultRoutes } from './default-routes'
 import { Cluster } from './ecs-cluster'
 import { Gateway } from './gateway'
 import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { Instance } from './instance'
+import { Kodi } from './kodi'
 import { DefaultNotifications, NotificationsTopic } from './notifications'
 import './pulumi-state'
 import { SecurityGroups } from './security-groups'
@@ -11,11 +13,37 @@ import { Vpc } from './vpc'
 
 const config = new pulumi.Config('home-stuff')
 
-const notifications = new NotificationsTopic('home-notifications', {})
+const providers = {
+    'us-east-1': new aws.Provider('us-east-1', {
+        region: 'us-east-1',
+        profile: process.env.AWS_PROFILE,
+        accessKey: process.env.AWS_ACCESS_KEY_ID,
+        secretKey: process.env.AWS_SECRET_ACCESS_KEY,
+        token: process.env.AWS_SESSION_TOKEN,
+        sharedCredentialsFile: process.env.AWS_SHARED_CREDENTIALS_FILE,
+    }),
+}
 
-new DefaultNotifications('home', {
-    topicArn: notifications.topicArn,
+const notifications = {
+    default: new NotificationsTopic('ap-southeast-2'),
+    'us-east-1': new NotificationsTopic(
+        'us-east-1',
+        {},
+        { provider: providers['us-east-1'] },
+    ),
+}
+
+new DefaultNotifications('ap-southeast-2', {
+    topicArn: notifications.default.topicArn,
 })
+
+new DefaultNotifications(
+    'us-east-1',
+    {
+        topicArn: notifications['us-east-1'].topicArn,
+    },
+    { provider: providers['us-east-1'] },
+)
 
 const homeVpc = new Vpc('home', {
     cidrBlock: config.require<string>('vpc-cidr-block'),
@@ -50,7 +78,7 @@ export const gateway = new Gateway('home-gateway', {
         zone: 'Z1LNE5PQ9LO13V',
     },
     natCidrs: [homeVpc.vpc.vpc.cidrBlock],
-    notificationsTopicArn: notifications.topicArn,
+    notificationsTopicArn: notifications.default.topicArn,
     openvpn: {
         tunnel: {
             localAddress: config.require<string>(
@@ -119,6 +147,23 @@ export const privateServer = config.getBoolean('enable-test-servers')
               fixedIpv6: true,
               useENI: true,
           },
+      })
+    : undefined
+
+export const kodi = config.getBoolean('enable-kodi-server')
+    ? new Kodi('kodi', {
+          subnetIds: privateSubnetIds,
+          vpcId,
+          securityGroupIds: [
+              securityGroups.allowEgressToAllSecurityGroup.id,
+              securityGroups.essentialIcmpSecurityGroup.id,
+              securityGroups.allowInboundFromHome.id,
+          ],
+          dns: {
+              zone: 'Z1LNE5PQ9LO13V',
+              hostname: 'kodi.home.bennettp123.com',
+          },
+          notificationsTopicArn: notifications.default.topicArn,
       })
     : undefined
 
