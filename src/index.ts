@@ -17,18 +17,18 @@ const providers = {
     'us-east-1': new aws.Provider('us-east-1', {
         region: 'us-east-1',
         profile: process.env.AWS_PROFILE,
-        accessKey: process.env.AWS_ACCESS_KEY_ID,
-        secretKey: process.env.AWS_SECRET_ACCESS_KEY,
-        token: process.env.AWS_SESSION_TOKEN,
-        sharedCredentialsFile: process.env.AWS_SHARED_CREDENTIALS_FILE,
     }),
 }
 
 const notifications = {
-    default: new NotificationsTopic('ap-southeast-2'),
+    default: new NotificationsTopic('ap-southeast-2', {
+        workAroundSomeOldTerraformBug: 'ap-southeast-2',
+    }),
     'us-east-1': new NotificationsTopic(
         'us-east-1',
-        {},
+        {
+            workAroundSomeOldTerraformBug: 'us-east-1',
+        },
         { provider: providers['us-east-1'] },
     ),
 }

@@ -1,5 +1,6 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
+import * as random from '@pulumi/random'
 import { getTags } from './helpers'
 
 const config = new pulumi.Config('common')
@@ -119,13 +120,110 @@ export class NotificationsTopic extends pulumi.ComponentResource {
     topicArn: pulumi.Output<string>
     constructor(
         name: string,
-        _args?: unknown,
+        args?: {
+            /**
+             * Terraform is cooked and can't do sns_topic_policy across more
+             * than one region at a time.
+             *
+             * See https://github.com/hashicorp/terraform-provider-aws/issues/1763#issuecomment-477808313
+             *
+             * To work around this bug, set this to the region in which the
+             * topic should exist.
+             */
+            workAroundSomeOldTerraformBug?: string
+        },
         opts?: pulumi.ComponentResourceOptions,
     ) {
         super('bennettp123:notifications/NotificationsTopic', name, {}, opts)
 
+        const makePolicyDoc = (topicArn: string) =>
+            aws.iam.getPolicyDocument(
+                {
+                    version: '2008-10-17',
+                    statements: [
+                        {
+                            sid: 'allow-managing-by-this-account',
+                            effect: 'Allow',
+                            principals: [
+                                {
+                                    type: 'AWS',
+                                    identifiers: ['*'],
+                                },
+                            ],
+                            actions: [
+                                'SNS:Publish',
+                                'SNS:RemovePermission',
+                                'SNS:SetTopicAttributes',
+                                'SNS:DeleteTopic',
+                                'SNS:ListSubscriptionsByTopic',
+                                'SNS:GetTopicAttributes',
+                                'SNS:Receive',
+                                'SNS:AddPermission',
+                                'SNS:Subscribe',
+                            ],
+                            resources: [topicArn],
+                            conditions: [
+                                {
+                                    test: 'StringEquals',
+                                    variable: 'AWS:SourceOwner',
+                                    values: [accountNumber],
+                                },
+                            ],
+                        },
+                        {
+                            sid: 'allow-publishing-by-this-account-and-eventbridge',
+                            effect: 'Allow',
+                            principals: [
+                                {
+                                    type: 'AWS',
+                                    identifiers: [
+                                        `arn:aws:iam::${accountNumber}:root`,
+                                    ],
+                                },
+                                {
+                                    type: 'Service',
+                                    identifiers: ['events.amazonaws.com'],
+                                },
+                            ],
+                            actions: ['SNS:Publish'],
+                            resources: [topicArn],
+                        },
+                        {
+                            sid: 'allow-this-account-to-subscribe-and-recieve',
+                            effect: 'Allow',
+                            principals: [
+                                {
+                                    type: 'AWS',
+                                    identifiers: [
+                                        `arn:aws:iam::${accountNumber}:root`,
+                                    ],
+                                },
+                            ],
+                            actions: ['SNS:Subscribe', 'SNS:Receive'],
+                            resources: [topicArn],
+                        },
+                    ],
+                },
+                pulumi.mergeOptions(opts, { parent: this }),
+            )
+
+        const aGoddamnRandomSuffix = new random.RandomString(
+            `${name}-a-goddamn-random-suffix`,
+            {
+                length: 5,
+                upper: true,
+                lower: true,
+                number: true,
+                special: false,
+            },
+            { parent: this },
+        ).result
+
+        const topicName = `${name}-topic`
+        const dummyArn = pulumi.interpolate`arn:aws:sns:${args?.workAroundSomeOldTerraformBug}:${accountNumber}:${topicName}-${aGoddamnRandomSuffix}`
+
         const topic = new aws.sns.Topic(
-            `${name}-topic`,
+            topicName,
             {
                 // AWS Chatbot needs encryption disabled :(
                 /*
@@ -136,96 +234,35 @@ export class NotificationsTopic extends pulumi.ComponentResource {
                     ),
                 ).id,
                 */
+                name: pulumi.interpolate`${topicName}-${aGoddamnRandomSuffix}`,
                 tags: getTags({
                     Name: name,
                 }),
+                ...(args?.workAroundSomeOldTerraformBug
+                    ? {
+                          policy: dummyArn.apply((dummyArn) =>
+                              makePolicyDoc(dummyArn),
+                          ).json,
+                      }
+                    : {}),
             },
             pulumi.mergeOptions(opts, {
                 parent: this,
-                ignoreChanges: ['policy'],
+                ignoreChanges: args?.workAroundSomeOldTerraformBug
+                    ? []
+                    : ['policy'],
             }),
         )
 
-        const policy = new aws.sns.TopicPolicy(`${name}-topic-policy`, {
-            arn: topic.arn,
-            policy: topic.arn.apply((topicArn) =>
-                aws.iam
-                    .getPolicyDocument(
-                        {
-                            version: '2008-10-17',
-                            statements: [
-                                {
-                                    sid: 'allow-managing-by-this-account',
-                                    effect: 'Allow',
-                                    principals: [
-                                        {
-                                            type: 'AWS',
-                                            identifiers: ['*'],
-                                        },
-                                    ],
-                                    actions: [
-                                        'SNS:Publish',
-                                        'SNS:RemovePermission',
-                                        'SNS:SetTopicAttributes',
-                                        'SNS:DeleteTopic',
-                                        'SNS:ListSubscriptionsByTopic',
-                                        'SNS:GetTopicAttributes',
-                                        'SNS:Receive',
-                                        'SNS:AddPermission',
-                                        'SNS:Subscribe',
-                                    ],
-                                    resources: [topicArn],
-                                    conditions: [
-                                        {
-                                            test: 'StringEquals',
-                                            variable: 'AWS:SourceOwner',
-                                            values: [accountNumber],
-                                        },
-                                    ],
-                                },
-                                {
-                                    sid: 'allow-publishing-by-this-account-and-eventbridge',
-                                    effect: 'Allow',
-                                    principals: [
-                                        {
-                                            type: 'AWS',
-                                            identifiers: [
-                                                `arn:aws:iam::${accountNumber}:root`,
-                                            ],
-                                        },
-                                        {
-                                            type: 'Service',
-                                            identifiers: [
-                                                'events.amazonaws.com',
-                                            ],
-                                        },
-                                    ],
-                                    actions: ['SNS:Publish'],
-                                    resources: [topicArn],
-                                },
-                                {
-                                    sid: 'allow-this-account-to-subscribe-and-recieve',
-                                    effect: 'Allow',
-                                    principals: [
-                                        {
-                                            type: 'AWS',
-                                            identifiers: [
-                                                `arn:aws:iam::${accountNumber}:root`,
-                                            ],
-                                        },
-                                    ],
-                                    actions: ['SNS:Subscribe', 'SNS:Receive'],
-                                    resources: [topicArn],
-                                },
-                            ],
-                        },
-                        pulumi.mergeOptions(opts, { parent: this }),
-                    )
-                    .then((p) => p.json),
-            ),
-        })
+        const policy = args?.workAroundSomeOldTerraformBug
+            ? undefined
+            : new aws.sns.TopicPolicy(`${name}-topic-policy`, {
+                  arn: topic.arn,
+                  policy: topic.arn.apply((topicArn) => makePolicyDoc(topicArn))
+                      .json,
+              })
 
         // wait for the policy to exist before exporting the topicArn
-        this.topicArn = policy.arn.apply(() => topic.arn)
+        this.topicArn = (policy ?? topic).arn.apply(() => topic.arn)
     }
 }
