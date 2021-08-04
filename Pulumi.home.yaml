@@ -20,6 +20,7 @@ config:
   home-stuff:enable-ecs: "false"
   home-stuff:enable-homebridge: "false"
   home-stuff:enable-homebridge-ecs: "false"
+  home-stuff:enable-kodi: "true"
   home-stuff:enable-test-servers: "false"
   home-stuff:enable-vpc-endpoints: "false"
   home-stuff:home-cidr-blocks:

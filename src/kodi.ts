@@ -98,10 +98,8 @@ export class Kodi extends pulumi.ComponentResource {
                 userData,
                 network: {
                     fixedPrivateIp: true,
-                    useEIP: true,
                     fixedIpv6: true,
                     useENI: true,
-                    sourceDestCheck: false,
                 },
                 dns: args.dns,
                 notificationsTopicArn: args.notificationsTopicArn,

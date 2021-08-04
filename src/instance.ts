@@ -1,8 +1,10 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
+import * as tls from '@pulumi/tls'
 import { Address6 } from 'ip-address'
 import {
+    addCmds,
     addHostKeys,
     getTags,
     makeCloudInitUserdata,
@@ -169,8 +171,7 @@ export interface InstanceArgs {
         sourceDestCheck?: boolean
     }
     /**
-     * Add SSH host keys. Any keys not specified will be generated
-     * automatically by cloud-init
+     * Add SSH host keys. If not specified, an ECDSA host key will be created.
      */
     sshHostKeys?: pulumi.Input<SshHostKeys>
     /**
@@ -399,6 +400,52 @@ export class Instance extends pulumi.ComponentResource {
                 )
             })
 
+        const kmsKeyId = pulumi.output(
+            aws.kms.getKey({ keyId: 'alias/aws/ebs' }, { parent: this }),
+        ).arn
+
+        const sshHostKeys = args.sshHostKeys ?? {
+            ...(() => {
+                const ecdsa = new tls.PrivateKey(
+                    `${name}-ssh-ecdsa`,
+                    {
+                        algorithm: 'ECDSA',
+                        ecdsaCurve: 'P256',
+                    },
+                    { parent: this },
+                )
+                return pulumi
+                    .all([ecdsa.publicKeyOpenssh, ecdsa.privateKeyPem])
+                    .apply(
+                        ([ecdsaPub, ecdsa]) =>
+                            ({
+                                ecdsaPub,
+                                ecdsa,
+                            } as SshHostKeys),
+                    )
+            })(),
+        }
+
+        // cloud-init creates unwanted keys, even when
+        const deleteUnwantedKeys = pulumi
+            .output(sshHostKeys)
+            .apply((sshHostKeys) => {
+                const types = ['rsa', 'dsa', 'ecdsa', 'ed25519']
+                const unwantedTypes = types.filter(
+                    (type) =>
+                        !Object.keys(sshHostKeys).some((key) => key === type),
+                )
+                const unwantedFiles = [
+                    ...unwantedTypes.map(
+                        (type) => `/etc/ssh/ssh_host_${type}_key`,
+                    ),
+                    ...unwantedTypes.map(
+                        (type) => `/etc/ssh/ssh_host_${type}_key.pub`,
+                    ),
+                ]
+                return unwantedFiles
+            })
+
         const instance = new aws.ec2.SpotInstanceRequest(
             `${name}-instance`,
             {
@@ -417,42 +464,51 @@ export class Instance extends pulumi.ComponentResource {
                     : networkSettings),
                 keyName: 'bennett@MacBook Pro 16',
                 userData: makeCloudInitUserdata(
-                    addHostKeys(
-                        pulumi.output(args.userData).apply((argsUserData) => ({
-                            ...userData,
-                            ...(argsUserData ?? {}),
-                            write_files:
-                                args.rebootForKernelUpdates ?? true
-                                    ? // reboot is enabled by default
-                                      [
-                                          ...userData.write_files,
-                                          ...((argsUserData ?? {})
-                                              .write_files ?? []),
-                                      ]
-                                    : // otherwise, disable reboot
-                                      [
-                                          ...userData.write_files.map(
-                                              (file) => ({
-                                                  ...file,
-                                                  content:
-                                                      file.path ===
-                                                      upgradeScriptPath
-                                                          ? upgrade
-                                                          : file.content,
-                                              }),
-                                          ),
-                                          ...((argsUserData ?? {})
-                                              .write_files ?? []),
-                                      ],
-                        })) as {},
-                        //{},
-                        args.sshHostKeys ?? {},
+                    addCmds(
+                        addHostKeys(
+                            pulumi
+                                .output(args.userData)
+                                .apply((argsUserData) => ({
+                                    ...userData,
+                                    ...(argsUserData ?? {}),
+                                    write_files:
+                                        args.rebootForKernelUpdates ?? true
+                                            ? // reboot is enabled by default
+                                              [
+                                                  ...userData.write_files,
+                                                  ...((argsUserData ?? {})
+                                                      .write_files ?? []),
+                                              ]
+                                            : // otherwise, disable reboot
+                                              [
+                                                  ...userData.write_files.map(
+                                                      (file) => ({
+                                                          ...file,
+                                                          content:
+                                                              file.path ===
+                                                              upgradeScriptPath
+                                                                  ? upgrade
+                                                                  : file.content,
+                                                      }),
+                                                  ),
+                                                  ...((argsUserData ?? {})
+                                                      .write_files ?? []),
+                                              ],
+                                })),
+                            sshHostKeys ?? {},
+                        ),
+                        deleteUnwantedKeys.apply((files) => [
+                            ...files.map((file) => `rm -f '${file}' || true`),
+                            'systemctl reload sshd',
+                        ]),
                     ),
                 ),
                 rootBlockDevice: {
                     deleteOnTermination: true,
                     volumeSize: 4,
                     volumeType: 'gp3',
+                    encrypted: true,
+                    kmsKeyId,
                 },
                 instanceInitiatedShutdownBehavior: 'stop',
                 spotType: 'persistent',

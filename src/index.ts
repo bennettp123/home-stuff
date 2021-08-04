@@ -72,6 +72,7 @@ export const gateway = new Gateway('home-gateway', {
         securityGroups.gatewaySecurityGroup.id,
         securityGroups.allowEgressToAllSecurityGroup.id,
         securityGroups.essentialIcmpSecurityGroup.id,
+        securityGroups.allowSshFromTrustedSources.id,
     ],
     dns: {
         hostname: 'gw.home.bennettp123.com',
@@ -117,6 +118,7 @@ export const publicServer = config.getBoolean('enable-test-servers')
               securityGroups.allowEgressToAllSecurityGroup.id,
               securityGroups.essentialIcmpSecurityGroup.id,
               securityGroups.allowInboundFromHome.id,
+              securityGroups.allowSshFromTrustedSources.id,
           ],
           dns: {
               zone: 'Z1LNE5PQ9LO13V',
@@ -138,6 +140,7 @@ export const privateServer = config.getBoolean('enable-test-servers')
               securityGroups.allowEgressToAllSecurityGroup.id,
               securityGroups.essentialIcmpSecurityGroup.id,
               securityGroups.allowInboundFromHome.id,
+              securityGroups.allowSshFromTrustedSources.id,
           ],
           dns: {
               zone: 'Z1LNE5PQ9LO13V',
@@ -150,7 +153,7 @@ export const privateServer = config.getBoolean('enable-test-servers')
       })
     : undefined
 
-export const kodi = config.getBoolean('enable-kodi-server')
+export const kodi = config.getBoolean('enable-kodi')
     ? new Kodi('kodi', {
           subnetIds: privateSubnetIds,
           vpcId,
@@ -158,6 +161,7 @@ export const kodi = config.getBoolean('enable-kodi-server')
               securityGroups.allowEgressToAllSecurityGroup.id,
               securityGroups.essentialIcmpSecurityGroup.id,
               securityGroups.allowInboundFromHome.id,
+              securityGroups.allowSshFromTrustedSources.id,
           ],
           dns: {
               zone: 'Z1LNE5PQ9LO13V',
@@ -187,6 +191,7 @@ if (config.getBoolean('enable-homebridge-ecs')) {
             securityGroups.allowEgressToAllSecurityGroup.id,
             securityGroups.essentialIcmpSecurityGroup.id,
             securityGroups.allowInboundFromPrivate.id,
+            securityGroups.allowSshFromTrustedSources.id,
         ],
     })
 }

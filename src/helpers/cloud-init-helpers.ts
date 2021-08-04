@@ -11,28 +11,30 @@ export function makeCloudInitUserdata(
 }
 
 export function addCmds(
-    userData: pulumi.Input<
-        {} & {
-            runcmd?: pulumi.Input<string>[] | undefined
-        }
-    >,
-    cmds: pulumi.Input<string>[],
+    userData: pulumi.Input<{
+        runcmd?: pulumi.Input<string>[] | undefined
+        [key: string]: unknown
+    }>,
+    cmds: pulumi.Input<string>[] | pulumi.Input<string[]>,
 ) {
-    return pulumi.all([userData, cmds]).apply(([userData, cmds]) => ({
-        ...userData,
-        runcmd: [...(userData.runcmd ?? []), ...cmds],
-    }))
+    return pulumi
+        .output(cmds)
+        .apply((cmds) =>
+            cmds.reduce((prev, cur) => addCmd(prev, cur), userData),
+        )
 }
 
 export function addCmd(
-    userData: pulumi.Input<
-        {} & {
-            runcmd?: pulumi.Input<string>[] | undefined
-        }
-    >,
+    userData: pulumi.Input<{
+        runcmd?: pulumi.Input<string>[] | undefined
+        [key: string]: unknown
+    }>,
     cmd: pulumi.Input<string>,
 ) {
-    return addCmds(userData, [cmd])
+    return pulumi.all([cmd, userData]).apply(([cmd, userData]) => ({
+        ...userData,
+        runcmd: [...(userData.runcmd ?? []), cmd],
+    }))
 }
 
 export type SshHostKeys = {
@@ -47,9 +49,10 @@ export type SshHostKeys = {
 }
 
 export function addHostKeys(
-    userData: pulumi.Input<
-        {} & { ssh_keys?: SshHostKeys | undefined; ssh_genkeytypes?: string[] }
-    >,
+    userData: pulumi.Input<{
+        ssh_keys?: SshHostKeys | undefined
+        [key: string]: unknown
+    }>,
     args: pulumi.Input<SshHostKeys>,
 ) {
     return pulumi.all([userData, args]).apply(([userData, args]) => {
@@ -70,27 +73,6 @@ export function addHostKeys(
             ...userData,
             ...(Object.values(args).some((e) => e !== undefined)
                 ? {
-                      ssh_genkeytypes: [
-                          'ecdsa',
-                          'ed25519',
-                          /*
-                      ...(userData.ssh_genkeytypes ?? []),
-                      ...(args.ecdsa &&
-                      args.ecdsaPub &&
-                      (userData.ssh_genkeytypes ?? []).findIndex(
-                          (e) => e === 'ecdsa',
-                      ) !== -1
-                          ? ['ecdsa']
-                          : []),
-                      ...(args.ed25519 &&
-                      args.ed25519Pub &&
-                      (userData.ssh_genkeytypes ?? []).findIndex(
-                          (e) => e === 'ed25519',
-                      ) !== -1
-                          ? ['ed25519']
-                          : []),
-                      */
-                      ],
                       ssh_keys: {
                           ...(userData.ssh_keys ?? {}),
                           ...(args.ecdsa
@@ -116,7 +98,7 @@ export function addHostKeys(
 
                           /**
                            * RSA doesn't work for some reason.
-                           * DSA probably works, but it's old and weak.
+                           * Probably too big for userData
                            */
                           /*
                           ...(args.rsa
@@ -127,7 +109,7 @@ export function addHostKeys(
                                     return {}
                                 })()
                               : {}),
-*/
+                          */
                           ...(args.dsa
                               ? (() => {
                                     pulumi.log.warn(
@@ -147,17 +129,21 @@ export function addHostKeys(
                                     rsa_public: args.rsaPub,
                                 }
                               : {}),
+                          /**
+                           * DSA probably works fine, but it's old and weak.
+                           */
                           /*
-                      ...(args.dsa
-                          ? {
-                                dsa_private: args.dsa,
-                            }
-                          : {}),
-                      ...(args.dsaPub
-                          ? {
-                                dsa_public: args.dsaPub,
-                            }
-                          : {}),*/
+                          ...(args.dsa
+                              ? {
+                                    dsa_private: args.dsa,
+                                }
+                            : {}),
+                          ...(args.dsaPub
+                              ? {
+                                    dsa_public: args.dsaPub,
+                                }
+                              : {}),
+                          */
                       },
                   }
                 : userData),

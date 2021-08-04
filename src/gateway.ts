@@ -11,8 +11,8 @@ const sshHostKeys: pulumi.Output<SshHostKeys> = packObject<string | undefined>({
     ed25519Pub: config.getSecret<string>('ssh-host-key-ed25519-pub'),
     ecdsa: config.getSecret<string>('ssh-host-key-ecdsa'),
     ecdsaPub: config.getSecret<string>('ssh-host-key-ecdsa-pub'),
-    rsa: config.getSecret<string>('ssh-host-key-rsa'),
-    rsaPub: config.getSecret<string>('ssh-host-key-rsa-pub'),
+    //rsa: config.getSecret<string>('ssh-host-key-rsa'),
+    //rsaPub: config.getSecret<string>('ssh-host-key-rsa-pub'),
 })
 
 export interface GatewayArgs extends Partial<InstanceArgs> {

@@ -23,18 +23,30 @@ export const homeIPv4s = [
 export const vpcIPv4s = ['192.168.64.0/18']
 
 export const privateIPv4s = [...vpcIPv4s, ...homeIPv4s]
+export const trustedPrivateIPv4s = [...homeIPv4s]
 
 export class SecurityGroups extends pulumi.ComponentResource {
-    /** A permissive security group that allows all outbound access */
+    /**
+     * A permissive outbound security group that allows all outbound access
+     */
     allowEgressToAllSecurityGroup: aws.ec2.SecurityGroup
 
-    /** A semi-permissive security group that allows inbound access from the VPC */
+    /** Allow SSH from trusted sources */
+    allowSshFromTrustedSources: aws.ec2.SecurityGroup
+
+    /**
+     * A semi-permissive inbound security group that allows inbound access
+     * from within the VPC
+     */
     allowInboundWithinVpc: aws.ec2.SecurityGroup
 
-    /** A semi-permissive security group that allows inbound access form the VPC and private subnets */
+    /**
+     * A semi-permissive inbound security group that allows inbound access
+     * from the VPC and private subnets
+     */
     allowInboundFromPrivate: aws.ec2.SecurityGroup
 
-    /** A security group for the gateway */
+    /** A security group for the gateway, includes routes n stuff */
     gatewaySecurityGroup: aws.ec2.SecurityGroup
 
     /**
@@ -402,6 +414,36 @@ export class SecurityGroups extends pulumi.ComponentResource {
                     },
                 ],
                 tags: getTags({ Name: `${name}-gw` }),
+            },
+            { parent: this },
+        )
+
+        this.allowSshFromTrustedSources = new aws.ec2.SecurityGroup(
+            `${name}-allow-ssh-from-trusted`,
+            {
+                description: 'allow SSH from trusted sources',
+                revokeRulesOnDelete: true,
+                vpcId: vpc.id,
+                ingress: [
+                    {
+                        fromPort: 22,
+                        toPort: 22,
+                        protocol: 'tcp',
+                        securityGroups: [this.gatewaySecurityGroup.id],
+                    },
+                    {
+                        fromPort: 22,
+                        toPort: 22,
+                        protocol: 'tcp',
+                        ipv6CidrBlocks: trustedPublicIPv6s,
+                    },
+                    {
+                        fromPort: 22,
+                        toPort: 22,
+                        protocol: 'tcp',
+                        cidrBlocks: trustedPrivateIPv4s,
+                    },
+                ],
             },
             { parent: this },
         )
