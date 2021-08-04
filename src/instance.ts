@@ -121,19 +121,18 @@ export interface InstanceArgs {
      * userdata sets up the EPEL repo, updates all packages, and creates a
      * users (if default-users is defined in config).
      */
-    userData?: pulumi.Input<
-        {} & {
-            write_files?: {} & (
-                | {
-                      path?: string | undefined
-                      owner?: string | undefined
-                      permissions?: string | undefined
-                      content?: string | undefined
-                  }[]
-                | undefined
-            )
-        }
-    >
+    userData?: pulumi.Input<{
+        write_files?:
+            | {
+                  path?: string | undefined
+                  owner?: string | undefined
+                  permissions?: string | undefined
+                  content?: string | undefined
+                  [key: string]: unknown
+              }[]
+            | undefined
+        [key: string]: unknown
+    }>
     /**
      * if set, A and AAAA records will be created
      * with the hostname and zone specified

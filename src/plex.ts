@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi'
-import { Instance, InstanceArgs, userData } from './instance'
+import { addRepo } from './helpers'
+import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 
 export interface KodiArgs extends Partial<InstanceArgs> {
     /**
@@ -45,7 +46,7 @@ export interface KodiArgs extends Partial<InstanceArgs> {
     notificationsTopicArn: pulumi.Input<string>
 }
 
-export class Kodi extends pulumi.ComponentResource {
+export class Plex extends pulumi.ComponentResource {
     /**
      * The public IP address of the kodi instance.
      */
@@ -86,13 +87,29 @@ export class Kodi extends pulumi.ComponentResource {
         args: KodiArgs,
         opts?: pulumi.CustomResourceOptions,
     ) {
-        super('bennettp123:kodi/Kodi', name, {}, opts)
+        super('bennettp123:plex/Plex', name, {}, opts)
+
+        const userData = addRepo(
+            {
+                ...defaultUserData,
+                packages: [...defaultUserData.packages, 'plexmediaserver'],
+            },
+            {
+                PlexRepo: {
+                    name: 'PlexRepo',
+                    baseurl: 'https://downloads.plex.tv/repo/rpm/$basearch/',
+                    enabled: true,
+                    gpgcheck: true,
+                    gpgkey: 'https://downloads.plex.tv/plex-keys/PlexSign.key',
+                },
+            },
+        )
 
         const instance = new Instance(
             name,
             {
                 subnetIds: args.subnetIds,
-                instanceType: 't4g.nano', // the smollest possible instance type
+                instanceType: 't3a.nano',
                 vpcId: args.vpcId,
                 securityGroupIds: args.securityGroupIds,
                 userData,

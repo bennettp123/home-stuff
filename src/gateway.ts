@@ -1,17 +1,8 @@
 import * as pulumi from '@pulumi/pulumi'
 import { Netmask } from 'netmask'
-import { SshHostKeys } from './helpers'
-import { packObject } from './helpers/pulumi-helpers'
 import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 
 const config = new pulumi.Config('gateway')
-
-const sshHostKeys: pulumi.Output<SshHostKeys> = packObject<string | undefined>({
-    ed25519: config.getSecret<string>('ssh-host-key-ed25519'),
-    ed25519Pub: config.getSecret<string>('ssh-host-key-ed25519-pub'),
-    ecdsa: config.getSecret<string>('ssh-host-key-ecdsa'),
-    ecdsaPub: config.getSecret<string>('ssh-host-key-ecdsa-pub'),
-})
 
 export interface GatewayArgs extends Partial<InstanceArgs> {
     /**
@@ -259,7 +250,6 @@ export class Gateway extends pulumi.ComponentResource {
                     sourceDestCheck: false,
                 },
                 dns: args.dns,
-                sshHostKeys,
                 notificationsTopicArn: args.notificationsTopicArn,
             },
             { parent: this },

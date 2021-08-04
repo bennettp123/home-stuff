@@ -31,10 +31,34 @@ export function addCmd(
     }>,
     cmd: pulumi.Input<string>,
 ) {
-    return pulumi.all([cmd, userData]).apply(([cmd, userData]) => ({
-        ...userData,
-        runcmd: [...(userData.runcmd ?? []), cmd],
-    }))
+    return pulumi.all([cmd, userData]).apply(
+        ([cmd, userData]) =>
+            ({
+                ...userData,
+                runcmd: [...(userData.runcmd ?? []), cmd],
+            } as typeof userData),
+    )
+}
+
+export function addRepo(
+    userData:
+        | pulumi.Input<{
+              yum_repos: { [key: string]: unknown }
+              [key: string]: unknown
+          }>
+        | undefined,
+    repo: pulumi.Input<{ [key: string]: any }>,
+) {
+    return pulumi.all([repo, userData]).apply(
+        ([repo, userData]) =>
+            ({
+                ...(userData ?? {}),
+                yum_repos: {
+                    ...(userData ?? {}).yum_repos,
+                    ...repo,
+                },
+            } as typeof userData),
+    )
 }
 
 export type SshHostKeys = {

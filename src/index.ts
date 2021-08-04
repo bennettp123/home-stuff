@@ -5,8 +5,8 @@ import { Cluster } from './ecs-cluster'
 import { Gateway } from './gateway'
 import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { Instance } from './instance'
-import { Kodi } from './kodi'
 import { DefaultNotifications, NotificationsTopic } from './notifications'
+import { Plex } from './plex'
 import './pulumi-state'
 import { SecurityGroups } from './security-groups'
 import { Vpc } from './vpc'
@@ -153,8 +153,8 @@ export const privateServer = config.getBoolean('enable-test-servers')
       })
     : undefined
 
-export const kodi = config.getBoolean('enable-kodi')
-    ? new Kodi('kodi', {
+export const plex = config.getBoolean('enable-plex')
+    ? new Plex('plex', {
           subnetIds: privateSubnetIds,
           vpcId,
           securityGroupIds: [
@@ -165,7 +165,7 @@ export const kodi = config.getBoolean('enable-kodi')
           ],
           dns: {
               zone: 'Z1LNE5PQ9LO13V',
-              hostname: 'kodi.home.bennettp123.com',
+              hostname: 'plex.home.bennettp123.com',
           },
           notificationsTopicArn: notifications.default.topicArn,
       })
