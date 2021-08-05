@@ -4,10 +4,10 @@ import * as random from '@pulumi/random'
 import * as tls from '@pulumi/tls'
 import { Address6 } from 'ip-address'
 import {
-    addCmds,
     addHostKeys,
     getTags,
     makeCloudInitUserdata,
+    prependCmds,
     SshHostKeys,
 } from './helpers'
 
@@ -182,6 +182,7 @@ export interface InstanceArgs {
      * An SNS topic for sending notifications
      */
     notificationsTopicArn?: pulumi.Input<string>
+    instanceRoleId?: pulumi.Input<string>
 }
 
 /**
@@ -450,6 +451,16 @@ export class Instance extends pulumi.ComponentResource {
             {
                 instanceType: args.instanceType,
                 ami: getAmazonLinux2AmiId({ arch }, { parent: this }),
+                ...(args.instanceRoleId
+                    ? {
+                          iamInstanceProfile: new aws.iam.InstanceProfile(
+                              `${name}-instance-profile`,
+                              {
+                                  role: args.instanceRoleId,
+                              },
+                          ).id,
+                      }
+                    : {}),
                 ...(nic
                     ? {
                           networkInterfaces: [
@@ -463,7 +474,7 @@ export class Instance extends pulumi.ComponentResource {
                     : networkSettings),
                 keyName: 'bennett@MacBook Pro 16',
                 userData: makeCloudInitUserdata(
-                    addCmds(
+                    prependCmds(
                         addHostKeys(
                             pulumi
                                 .output(args.userData)

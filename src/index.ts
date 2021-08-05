@@ -155,13 +155,21 @@ export const privateServer = config.getBoolean('enable-test-servers')
 
 export const plex = config.getBoolean('enable-plex')
     ? new Plex('plex', {
-          subnetIds: privateSubnetIds,
+          subnet: pulumi.output(homeVpc.vpc.publicSubnets).apply(
+              (publicSubnets) =>
+                  publicSubnets.pop() ??
+                  (() => {
+                      throw new pulumi.RunError(
+                          'could not get first private subnet',
+                      )
+                  })(),
+          ).subnet,
           vpcId,
           securityGroupIds: [
-              securityGroups.allowEgressToAllSecurityGroup.id,
               securityGroups.essentialIcmpSecurityGroup.id,
               securityGroups.allowInboundFromHome.id,
               securityGroups.allowSshFromTrustedSources.id,
+              securityGroups.plexSecurityGroup.id,
           ],
           dns: {
               zone: 'Z1LNE5PQ9LO13V',

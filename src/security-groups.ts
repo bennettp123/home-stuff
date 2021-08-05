@@ -1,5 +1,6 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
+import * as ipAddress from 'ip-address'
 import { getTags } from './helpers'
 
 export const homeIPv6s = [
@@ -25,6 +26,115 @@ export const vpcIPv4s = ['192.168.64.0/18']
 export const privateIPv4s = [...vpcIPv4s, ...homeIPv4s]
 export const trustedPrivateIPv4s = [...homeIPv4s]
 
+// everything except 192.168.0.0/16
+export const notPrivateIPv4s = [
+    '0.0.0.0/1',
+    '128.0.0.0/2',
+    '224.0.0.0/3',
+    '208.0.0.0/4',
+    '200.0.0.0/5',
+    '196.0.0.0/6',
+    '194.0.0.0/7',
+    '193.0.0.0/8',
+]
+
+// everything except homeIPv6s and the vpc
+// assumes the VPC is 2406:da1c:a70:9300::/56
+// assumes home is 2404:bf40:e402::/48
+export const notPrivateIPv6s = [
+    '8000::/1',
+    '4000::/2',
+    '3000::/4',
+    '2000::/6',
+    '2400::/14',
+    '2404::/17',
+    '2404:8000::/19',
+    '2404:a000::/20',
+    '2404:b000::/21',
+    '2404:b800::/22',
+    '2404:bc00::/23',
+    '2404:be00::/24',
+    '2404:bf00::/26',
+    '2404:bf40::/33',
+    '2404:bf40:8000::/34',
+    '2404:bf40:c000::/35',
+    '2404:bf40:e000::/38',
+    /*
+    '2404:bf40:e400::/47',
+    '2404:bf40:e403::/48',
+    '2404:bf40:e404::/46',
+    '2404:bf40:e408::/45',
+    '2404:bf40:e410::/44',
+    '2404:bf40:e420::/43',
+    '2404:bf40:e440::/42',
+    '2404:bf40:e480::/41',
+    '2404:bf40:e500::/40',
+    */
+    '2404:bf40:e600::/39',
+    '2404:bf40:e800::/37',
+    '2404:bf40:f000::/36',
+    '2404:bf41::/32',
+    '2404:bf42::/31',
+    '2404:bf44::/30',
+    '2404:bf48::/29',
+    '2404:bf50::/28',
+    '2404:bf60::/27',
+    '2404:bf80::/25',
+    '2404:c000::/18',
+    '2405::/16',
+    '2406::/17',
+    '2406:8000::/18',
+    '2406:c000::/20',
+    '2406:d000::/21',
+    '2406:d800::/23',
+    '2406:da00::/28',
+    '2406:da10::/29',
+    '2406:da18::/30',
+    '2406:da1c::/37',
+    '2406:da1c:0800::/39',
+    /*
+    '2406:da1c:0a00::/42',
+    '2406:da1c:0a40::/43',
+    '2406:da1c:0a60::/44',
+    '2406:da1c:0a70::/49',
+    '2406:da1c:0a70:8000::/52',
+    '2406:da1c:0a70:9000::/55',
+    '2406:da1c:0a70:9200::/56',
+    '2406:da1c:0a70:9400::/54',
+    '2406:da1c:0a70:9800::/53',
+    '2406:da1c:0a70:a000::/51',
+    '2406:da1c:0a70:c000::/50',
+    '2406:da1c:0a71::/48',
+    '2406:da1c:0a72::/47',
+    '2406:da1c:0a74::/46',
+    '2406:da1c:0a78::/45',
+    '2406:da1c:0a80::/41',
+    '2406:da1c:0b00::/40',
+    '2406:da1c:0c00::/38',
+    '2406:da1c:1000::/36',
+    '2406:da1c:2000::/35',
+    '2406:da1c:4000::/34',
+    '2406:da1c:8000::/33',
+    */
+    '2406:da1d::/32',
+    '2406:da1e::/31',
+    '2406:da20::/27',
+    '2406:da40::/26',
+    '2406:da80::/25',
+    '2406:db00::/24',
+    '2406:dc00::/22',
+    '2406:e000::/19',
+    '2407::/16',
+    '2408::/13',
+    '2410::/12',
+    '2420::/11',
+    '2440::/10',
+    '2480::/9',
+    '2500::/8',
+    '2600::/7',
+    '2800::/5',
+]
+
 export class SecurityGroups extends pulumi.ComponentResource {
     /**
      * A permissive outbound security group that allows all outbound access
@@ -48,6 +158,12 @@ export class SecurityGroups extends pulumi.ComponentResource {
 
     /** A security group for the gateway, includes routes n stuff */
     gatewaySecurityGroup: aws.ec2.SecurityGroup
+
+    /**
+     * A security group for the plex server, includes routes n stuff
+     * https://support.plex.tv/articles/201543147-what-network-ports-do-i-need-to-allow-through-my-firewall/
+     */
+    plexSecurityGroup: aws.ec2.SecurityGroup
 
     /**
      * A security group which permits essential ICMP and ICMPv6 messages
@@ -418,6 +534,188 @@ export class SecurityGroups extends pulumi.ComponentResource {
             { parent: this },
         )
 
+        this.plexSecurityGroup = new aws.ec2.SecurityGroup(
+            `${name}-plex`,
+            {
+                description: 'security group for plex media server',
+                revokeRulesOnDelete: true,
+                vpcId: vpc.id,
+                ingress: [
+                    {
+                        ipv6CidrBlocks: ['::/0'],
+                        fromPort: 32400,
+                        toPort: 32400,
+                        protocol: 'tcp',
+                    },
+                    {
+                        ipv6CidrBlocks: ['::/0'],
+                        fromPort: 32400,
+                        toPort: 32400,
+                        protocol: 'udp',
+                    },
+                    {
+                        cidrBlocks: ['0.0.0.0/0'],
+                        fromPort: 32400,
+                        toPort: 32400,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: ['0.0.0.0/0'],
+                        fromPort: 32400,
+                        toPort: 32400,
+                        protocol: 'udp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 5353,
+                        toPort: 5353,
+                        protocol: 'udp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 5353,
+                        toPort: 5353,
+                        protocol: 'tcp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 8324,
+                        toPort: 8324,
+                        protocol: 'tcp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 32410,
+                        toPort: 32410,
+                        protocol: 'tcp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 32412,
+                        toPort: 32414,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 5353,
+                        toPort: 5353,
+                        protocol: 'udp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 5353,
+                        toPort: 5353,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 8324,
+                        toPort: 8324,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 32410,
+                        toPort: 32410,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 32412,
+                        toPort: 32414,
+                        protocol: 'tcp',
+                    },
+                ],
+                egress: [
+                    {
+                        ipv6CidrBlocks: notPrivateIPv6s,
+                        fromPort: 0,
+                        toPort: 0,
+                        protocol: '-1',
+                    },
+                    {
+                        cidrBlocks: notPrivateIPv4s,
+                        fromPort: 0,
+                        toPort: 0,
+                        protocol: '-1',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 1900,
+                        toPort: 1900,
+                        protocol: 'udp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 5353,
+                        toPort: 5353,
+                        protocol: 'udp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 5353,
+                        toPort: 5353,
+                        protocol: 'tcp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 8324,
+                        toPort: 8324,
+                        protocol: 'tcp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 32410,
+                        toPort: 32410,
+                        protocol: 'tcp',
+                    },
+                    {
+                        ipv6CidrBlocks: homeIPv6s,
+                        fromPort: 32412,
+                        toPort: 32414,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 1900,
+                        toPort: 1900,
+                        protocol: 'udp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 5353,
+                        toPort: 5353,
+                        protocol: 'udp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 5353,
+                        toPort: 5353,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 8324,
+                        toPort: 8324,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 32410,
+                        toPort: 32410,
+                        protocol: 'tcp',
+                    },
+                    {
+                        cidrBlocks: homeIPv4s,
+                        fromPort: 32412,
+                        toPort: 32414,
+                        protocol: 'tcp',
+                    },
+                ],
+            },
+            { parent: this },
+        )
+
         this.allowSshFromTrustedSources = new aws.ec2.SecurityGroup(
             `${name}-allow-ssh-from-trusted`,
             {
@@ -528,3 +826,55 @@ export class SecurityGroups extends pulumi.ComponentResource {
         )
     }
 }
+function isAddress(
+    address: any,
+): address is ipAddress.Address4 | ipAddress.Address6 {
+    return (
+        ((address as ipAddress.Address4).address !== undefined &&
+            (address as ipAddress.Address4).startAddress !== undefined &&
+            (address as ipAddress.Address4).endAddress !== undefined &&
+            (address as ipAddress.Address4).bigInteger !== undefined) ||
+        ((address as ipAddress.Address6).address !== undefined &&
+            (address as ipAddress.Address6).startAddress !== undefined &&
+            (address as ipAddress.Address6).endAddress !== undefined &&
+            (address as ipAddress.Address6).bigInteger !== undefined)
+    )
+}
+
+function isAddress4(address: any): address is ipAddress.Address4 {
+    return isAddress(address) && (address as ipAddress.Address4).v4 === true
+}
+
+function isAddress6(address: any): address is ipAddress.Address6 {
+    return isAddress(address) && (address as ipAddress.Address6).v4 === false
+}
+
+export function getSubnets<
+    T extends ipAddress.Address4 | ipAddress.Address6,
+>(args: { start: T; end: T }) {
+    const start = args.start.startAddress()
+    const end = args.end.endAddress()
+    const addresses = []
+    for (let i = start.bigInteger(); i < end.bigInteger() + 1; i++) {
+        addresses.push(
+            isAddress4(start)
+                ? ipAddress.Address4.fromBigInteger(i)
+                : isAddress6(start)
+                ? ipAddress.Address6.fromBigInteger(i)
+                : (() => {
+                      throw new Error(
+                          'start does not appear to be an Address4 or Address6 type',
+                      )
+                  })(),
+        )
+    }
+    return addresses
+}
+
+export function packSubnets<T extends ipAddress.Address4 | ipAddress.Address6>(
+    addresses: T[],
+) {}
+
+export function exclude<
+    T extends ipAddress.Address4 | ipAddress.Address6,
+>(args: { subnet: T; from: T }) {}

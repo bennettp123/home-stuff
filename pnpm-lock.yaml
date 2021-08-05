@@ -172,7 +172,7 @@ packages:
     dev: false
 
   /@pulumi/tls/4.0.0:
-    resolution: {integrity: sha512-MwjAASX+HNjQ4fI2gkVR9m1vDqrN6AfTrWE0BynFn/4rq26Y0U57zNqF9QJLzWPR/fxuZCV0Le25hHx9e+OrRA==}
+    resolution: {integrity: sha512-MwjAASX+HNjQ4fI2gkVR9m1vDqrN6AfTrWE0BynFn/4rq26Y0U57zNqF9QJLzWPR/fxuZCV0Le25hHx9e+OrRA==, tarball: '@pulumi/tls/-/tls-4.0.0.tgz'}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.9.1

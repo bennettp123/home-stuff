@@ -10,21 +10,37 @@ export function makeCloudInitUserdata(
         )
 }
 
-export function addCmds(
+export function prependCmds(
     userData: pulumi.Input<{
         runcmd?: pulumi.Input<string>[] | undefined
         [key: string]: unknown
     }>,
     cmds: pulumi.Input<string>[] | pulumi.Input<string[]>,
 ) {
-    return pulumi
-        .output(cmds)
-        .apply((cmds) =>
-            cmds.reduce((prev, cur) => addCmd(prev, cur), userData),
-        )
+    return pulumi.all([cmds, userData]).apply(([cmds, userData]) => {
+        return pulumi.all(cmds).apply((cmds) => ({
+            ...userData,
+            runcmd: [...cmds, ...(userData.runcmd ?? [])],
+        }))
+    }) as typeof userData
 }
 
-export function addCmd(
+export function appendCmds(
+    userData: pulumi.Input<{
+        runcmd?: pulumi.Input<string>[] | undefined
+        [key: string]: unknown
+    }>,
+    cmds: pulumi.Input<string>[] | pulumi.Input<string[]>,
+) {
+    return pulumi.all([cmds, userData]).apply(([cmds, userData]) => {
+        return pulumi.all(cmds).apply((cmds) => ({
+            ...userData,
+            runcmd: [...(userData.runcmd ?? []), ...cmds],
+        }))
+    }) as typeof userData
+}
+
+export function appendCmd(
     userData: pulumi.Input<{
         runcmd?: pulumi.Input<string>[] | undefined
         [key: string]: unknown
@@ -36,6 +52,22 @@ export function addCmd(
             ({
                 ...userData,
                 runcmd: [...(userData.runcmd ?? []), cmd],
+            } as typeof userData),
+    )
+}
+
+export function prependCmd(
+    userData: pulumi.Input<{
+        runcmd?: pulumi.Input<string>[] | undefined
+        [key: string]: unknown
+    }>,
+    cmd: pulumi.Input<string>,
+) {
+    return pulumi.all([cmd, userData]).apply(
+        ([cmd, userData]) =>
+            ({
+                ...userData,
+                runcmd: [cmd, ...(userData.runcmd ?? [])],
             } as typeof userData),
     )
 }
