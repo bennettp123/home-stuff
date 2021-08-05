@@ -9,6 +9,36 @@ const accountNumber = common.require<string>('aws-account-number')
 const config = new pulumi.Config('plex')
 
 /**
+ * Mount a wasabi bucket in addition to the S3 bucket.
+ */
+const wasabiBucket = config.get<string>('wasabi-bucket')
+
+/**
+ * Access key for connecting to wasabi-bucket
+ * Format: `${accessKey}:${secret}` or `${bucket}:${accessKey}:${secret}`
+ */
+const wasabiCreds = config
+    .getSecret<string>('wasabi-creds')
+    ?.apply((creds) =>
+        creds.startsWith(wasabiBucket ? `${wasabiBucket}:` : '')
+            ? creds
+            : `${wasabiBucket ? `${wasabiBucket}:` : ''}${creds}`,
+    )
+
+/**
+ * The URL to use when connecting to wasabi. The default is to use us-east-1.
+ * See https://wasabi-support.zendesk.com/hc/en-us/articles/360015106031-What-are-the-service-URLs-for-Wasabi-s-different-storage-regions-
+ * for valid URLs.
+ */
+const wasabiUrl =
+    config.get<string>('wasabi-url') ?? 's3.us-east-1.wasabisys.com'
+
+/**
+ * Override the instance type.
+ */
+const instanceType = config.get<string>('instance-type') || 't3a.micro'
+
+/**
  * offline: plex server is switched off, but EBS/S3 resources are kept online
  * online: plex server is online
  */
@@ -91,6 +121,30 @@ export class Plex extends pulumi.ComponentResource {
     ) {
         super('bennettp123:plex/Plex', name, {}, opts)
 
+        if (wasabiBucket && (!wasabiUrl || wasabiUrl === '')) {
+            pulumi.log.warn(
+                'wasabi-url not provided -- the default url is for us-east-1 only. ' +
+                    `If wasabi bucket ${wasabiBucket} is not in us-east-1, then ` +
+                    'mounting will fail. ' +
+                    'Set wasabi-url to suppress this warning. ',
+                this,
+            )
+        }
+
+        wasabiCreds?.apply((creds) => {
+            if (creds && creds !== '') {
+                return creds
+            }
+            if (
+                (!creds || creds === '') &&
+                wasabiBucket &&
+                wasabiBucket !== ''
+            ) {
+                throw new pulumi.RunError('wasabi-bucket needs wasabi-creds!')
+            }
+            return creds
+        })
+
         const bucket = new aws.s3.Bucket(
             `${name}-bucket`,
             {
@@ -130,13 +184,22 @@ export class Plex extends pulumi.ComponentResource {
 
         const userData = appendCmds(
             addRepo(
-                bucket.id.apply((bucketId) => ({
+                {
                     ...defaultUserData,
                     packages: [
                         's3fs-fuse',
                         ...defaultUserData.packages,
                         'vim',
                         'plexmediaserver',
+                    ],
+                    write_files: [
+                        ...(defaultUserData.write_files ?? []),
+                        {
+                            path: '/etc/passwd-s3fs',
+                            owner: 'root:root',
+                            permissions: '0600',
+                            content: wasabiCreds,
+                        },
                     ],
                     disk_setup: {
                         ...((
@@ -174,7 +237,7 @@ export class Plex extends pulumi.ComponentResource {
                             '2',
                         ],
                     ],
-                })),
+                },
                 {
                     plex: {
                         name: 'PlexRepo',
@@ -187,12 +250,30 @@ export class Plex extends pulumi.ComponentResource {
                 },
             ),
             [
-                'mkdir -p /opt/media',
+                'mkdir -p /opt/media-s3',
+                ...(wasabiBucket
+                    ? [
+                          'mkdir -p /opt/media-wasabi',
+                          (() => {
+                              const s3fs = [
+                                  `s3fs#${wasabiBucket}`,
+                                  '/opt/media-wasabi',
+                                  'fuse',
+                                  `_netdev,rw,nosuid,nodev,allow_other,user=plex${
+                                      wasabiUrl ? `,url=${wasabiUrl}` : ''
+                                  }`,
+                                  '0',
+                                  '2',
+                              ].join('    ')
+                              return `grep -Fq "${s3fs}" /etc/fstab || echo "${s3fs}" >> /etc/fstab `
+                          })(),
+                      ]
+                    : []),
                 bucket.id.apply((bucketId) => {
                     // cloud-init can't mount this itself?!
                     const s3fs = [
                         `s3fs#${bucketId}`,
-                        '/opt/media',
+                        '/opt/media-s3',
                         'fuse',
                         '_netdev,rw,nosuid,nodev,allow_other,nonempty,iam_role=auto,endpoint=ap-southeast-2,host=https://s3.dualstack.ap-southeast-2.amazonaws.com,user=plex',
                         '0',
@@ -293,7 +374,7 @@ export class Plex extends pulumi.ComponentResource {
                     .output(args.subnet)
                     .apply((subnet) => subnet.id)
                     .apply((id) => [id]),
-                instanceType: 't3.small',
+                instanceType,
                 vpcId: args.vpcId,
                 securityGroupIds: args.securityGroupIds,
                 userData,

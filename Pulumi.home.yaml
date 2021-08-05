@@ -28,4 +28,9 @@ config:
         bennett@MacBook Pro 16
     sudoers:
     - bennett
-  plex:state: offline
+  plex:instance-type: t3.micro
+  plex:state: online
+  plex:wasabi-bucket: plex-bucket-495b3c2
+  plex:wasabi-creds:
+    secure: v1:rMP8RD5qc50FUOzN:3J+ef7lxYXOJ32S9CbFMSV/inrOIpIUNF1ALlyJCEfWDTuFEcRwrfx2xw4TO74mdBhRC+NyD9UWOue94D0FQyyUshQ96CDklZbK1MUpKbO4kroxZBPfMMzzPDu1mkxFyaw==
+  plex:wasabi-url: https://s3.us-west-1.wasabisys.com

@@ -182,7 +182,19 @@ export interface InstanceArgs {
      * An SNS topic for sending notifications
      */
     notificationsTopicArn?: pulumi.Input<string>
+
+    /**
+     * An optional role to assign to the EC2 instance.
+     */
     instanceRoleId?: pulumi.Input<string>
+
+    /**
+     * If true:
+     *   - the instance will be terminated
+     *   - the ENI will be deleted
+     *   - the EIP (if enabled) will be retained, but remain unattached
+     *   - other resources will be retained
+     */
     offline?: boolean
 }
 
@@ -674,11 +686,7 @@ export class Instance extends pulumi.ComponentResource {
                           name: hostname,
                           type: 'A',
                           zoneId: args.dns.zone,
-                          ttl:
-                              args.network?.fixedPrivateIp ||
-                              args.network?.useEIP
-                                  ? 3600
-                                  : 300,
+                          ttl: 300,
                           records: [this.ip],
                       },
                       {
