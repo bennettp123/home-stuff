@@ -3,8 +3,16 @@ import * as pulumi from '@pulumi/pulumi'
 import { addRepo, appendCmds, getTags } from './helpers'
 import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
 
-const config = new pulumi.Config('common')
-const accountNumber = config.require<string>('aws-account-number')
+const common = new pulumi.Config('common')
+const accountNumber = common.require<string>('aws-account-number')
+
+const config = new pulumi.Config('plex')
+
+/**
+ * offline: plex server is switched off, but EBS/S3 resources are kept online
+ * online: plex server is online
+ */
+const desiredState = config.get<'offline' | 'online'>('state') ?? 'offline'
 
 export interface PlexArgs extends Partial<InstanceArgs> {
     /**
@@ -75,16 +83,6 @@ export class Plex extends pulumi.ComponentResource {
      * The hostname of the kodi instance
      */
     hostname: pulumi.Output<string>
-
-    /**
-     * The instance ID of the kodi instance
-     */
-    instanceId: pulumi.Output<string>
-
-    /**
-     * The ID of the network interface attached to the gatway instance
-     */
-    interfaceId: pulumi.Output<string>
 
     constructor(
         name: string,
@@ -302,12 +300,13 @@ export class Plex extends pulumi.ComponentResource {
                 network: {
                     fixedPrivateIp: true,
                     fixedIpv6: true,
-                    useENI: true,
-                    useEIP: true,
+                    useENI: false,
+                    useEIP: false,
                 },
                 dns: args.dns,
                 notificationsTopicArn: args.notificationsTopicArn,
                 instanceRoleId: role.id,
+                offline: desiredState === 'offline',
             },
             { parent: this },
         )
@@ -331,18 +330,20 @@ export class Plex extends pulumi.ComponentResource {
             { parent: this, protect: true },
         )
 
-        new aws.ec2.VolumeAttachment(
-            `${name}-var`,
-            {
-                volumeId: storage.id,
-                instanceId: instance.instanceId,
-                deviceName: '/dev/sdf',
-            },
-            { parent: this },
-        )
+        if (instance.instanceId) {
+            new aws.ec2.VolumeAttachment(
+                `${name}-var`,
+                {
+                    volumeId: storage.id,
+                    instanceId: instance.instanceId,
+                    deviceName: '/dev/sdf',
+                },
+                { parent: this },
+            )
+        }
 
         this.ip = instance.ip
-        this.ipv6 = instance.ipv6
+        this.ipv6 = instance.ipv6!
         this.hostname = pulumi.output(instance.hostname).apply(
             (hostname) =>
                 hostname ??
@@ -353,9 +354,7 @@ export class Plex extends pulumi.ComponentResource {
                     )
                 })(),
         )
-        this.instanceId = instance.instanceId
-        this.interfaceId = instance.interfaceId
         this.publicIp = instance.publicIp!
-        this.privateIp = instance.privateIp
+        this.privateIp = instance.privateIp!
     }
 }

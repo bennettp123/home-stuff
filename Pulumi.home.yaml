@@ -28,3 +28,4 @@ config:
         bennett@MacBook Pro 16
     sudoers:
     - bennett
+  plex:state: offline

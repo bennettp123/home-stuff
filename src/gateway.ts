@@ -251,12 +251,13 @@ export class Gateway extends pulumi.ComponentResource {
                 },
                 dns: args.dns,
                 notificationsTopicArn: args.notificationsTopicArn,
+                offline: false,
             },
             { parent: this },
         )
 
-        this.ip = instance.ip
-        this.ipv6 = instance.ipv6
+        this.ip = instance.ip!
+        this.ipv6 = instance.ipv6!
         this.hostname = pulumi.output(instance.hostname).apply(
             (hostname) =>
                 hostname ??
@@ -267,9 +268,9 @@ export class Gateway extends pulumi.ComponentResource {
                     )
                 })(),
         )
-        this.instanceId = instance.instanceId
-        this.interfaceId = instance.interfaceId
+        this.instanceId = instance.instanceId!
+        this.interfaceId = instance.interfaceId!
         this.publicIp = instance.publicIp!
-        this.privateIp = instance.privateIp
+        this.privateIp = instance.privateIp!
     }
 }
