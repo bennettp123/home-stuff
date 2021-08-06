@@ -16,7 +16,17 @@ pulumi up
 1. Infrastructure as code. Everything is automated.
 2. Cost should be zero, or as close to zero as possible.
 3. Availability isn't super-important, but everything must autoheal.
-4. Minimalism. If the first three goals can't be met, it's better not to do it at all. Prefer simplicity.
+4. If the first three goals can't be met, it's better not to do it at all.
+
+## Plex server
+
+Plex appears to store everything in `/var/lib/plexmediaserver`. This folder has a dedicated EBS volume, which is retained across instance termination.
+
+The tricky part is media storage. An S3 bucket is mounted at `/opt/media-s3`, but is too expensive, and will be removed in future. Instead, a wasabi bucket is mounted at `/opt/media-wasabi`. Both are mounted using s3fs.
+
+A burstable instance type is used for compute. This is ok for direct playback, but it struggles to transcode unless it has enough burst credits. Fortunately, since it's mostly idle, there seem to be enough burst credits. However, it is a spot instance, and spot instances launch without burst credits, so keep that in mind when making changes.
+
+If more compute performance is needed, t4g/a1 instances are available... and plex provides packages for raspbian...
 
 ## The VPC
 
@@ -26,7 +36,7 @@ The VPC has three different subnet types:
 -   private -- instances are not assigned a public IPv4 at launch; outbound access only
 -   isolated -- instances do not have outbound access to the public internet
 
-Typically, on a private subnet, outbound IPv4 is routed through a NAT gateway. However, NAT gateways are expensive, so instead, the gateway instance routes IPv4 traffic to the public internet. IPv6 traffic is routed through an egress-only internet gateway, which has no cost.
+Typically, on a private subnet, outbound IPv4 is routed through a NAT gateway. However, NAT gateways are expensive, so instead, the gateway instance routes IPv4 traffic to the public internet. IPv6 traffic is routed through an egress-only internet gateway, which, unlike a NAT gateway, has no cost above that of the data transfers.
 
 The VPC operates within a single AZ. This has a few advantages:
 
@@ -67,7 +77,7 @@ AWS NAT gateways are expensive. So instead, the traffic is routed out through th
 
 ### Key rotation
 
-To rotate the shared secret:
+To rotate the openvpn shared secret:
 
 ```
 # generate a new shared secret
@@ -88,4 +98,4 @@ Finally, the secret needs to be set in the unifi network settings, in the VPN se
 -   The private subnet has no access to the IPv4 internet. This is because I don't want to pay for an NAT gateways. However, traffic is routed through the gateway, so it should work, ableit slowly. IPv6 is unaffected.
 -   The unifi gateway doesn't support IPv6 over VPN. This means that IPv4 access works fine.
 -   The pulumi config contains its own state bucket and AWS key. Some find this confusing, but that's their problem.
--   Amazon Linux doesn't seem to support the "new" SSH private key format for RSA keys. The RSA private key should start with `-----BEGIN RSA PRIVATE KEY-----`
+-   Amazon Linux doesn't seem to support the "new" SSH private key format for RSA keys, and expects the private key to be in PEM format. The RSA private key should start with `-----BEGIN RSA PRIVATE KEY-----`
