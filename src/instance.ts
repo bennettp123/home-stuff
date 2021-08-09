@@ -121,18 +121,33 @@ export interface InstanceArgs {
      * userdata sets up the EPEL repo, updates all packages, and creates a
      * users (if default-users is defined in config).
      */
-    userData?: pulumi.Input<{
-        write_files?:
-            | {
-                  path?: string | undefined
-                  owner?: string | undefined
-                  permissions?: string | undefined
-                  content?: string | undefined
+    userData?:
+        | pulumi.Input<{
+              write_files?:
+                  | {
+                        path?: string | undefined
+                        owner?: string | undefined
+                        permissions?: string | undefined
+                        content?: string | undefined
+                        [key: string]: unknown
+                    }[]
+                  | undefined
+              [key: string]: unknown
+          }>
+        | Promise<
+              pulumi.Input<{
+                  write_files?:
+                      | {
+                            path?: string | undefined
+                            owner?: string | undefined
+                            permissions?: string | undefined
+                            content?: string | undefined
+                            [key: string]: unknown
+                        }[]
+                      | undefined
                   [key: string]: unknown
-              }[]
-            | undefined
-        [key: string]: unknown
-    }>
+              }>
+          >
     /**
      * if set, A and AAAA records will be created
      * with the hostname and zone specified
@@ -187,6 +202,16 @@ export interface InstanceArgs {
      * An optional role to assign to the EC2 instance.
      */
     instanceRoleId?: pulumi.Input<string>
+
+    /**
+     * Override the default Amazon Linux 2 AMI
+     */
+    amiId?: pulumi.Input<string>
+
+    /**
+     * Override the size of the root volume.
+     */
+    rootVolumeSize?: pulumi.Input<number>
 
     /**
      * If true:
@@ -467,7 +492,9 @@ export class Instance extends pulumi.ComponentResource {
                       `${name}-instance`,
                       {
                           instanceType: args.instanceType,
-                          ami: getAmazonLinux2AmiId({ arch }, { parent: this }),
+                          ami:
+                              args.amiId ??
+                              getAmazonLinux2AmiId({ arch }, { parent: this }),
                           ...(args.instanceRoleId
                               ? {
                                     iamInstanceProfile:
@@ -542,7 +569,7 @@ export class Instance extends pulumi.ComponentResource {
                           ),
                           rootBlockDevice: {
                               deleteOnTermination: true,
-                              volumeSize: 4,
+                              volumeSize: args.rootVolumeSize ?? 4,
                               volumeType: 'gp3',
                               encrypted: true,
                               kmsKeyId,
@@ -743,10 +770,12 @@ export class Instance extends pulumi.ComponentResource {
     }
 }
 
+export type Arch = 'x86_64' | 'amd64' | 'arm64'
+
 // https://aws.amazon.com/blogs/compute/query-for-the-latest-amazon-linux-ami-ids-using-aws-systems-manager-parameter-store/
 export function getAmazonLinux2AmiId(
     args: {
-        arch: 'x86_64' | 'arm64' | pulumi.Input<'x86_64' | 'arm64'>
+        arch: Arch | pulumi.Input<Arch>
     },
     opts?: pulumi.InvokeOptions,
 ): pulumi.Output<string> {
@@ -755,7 +784,9 @@ export function getAmazonLinux2AmiId(
             await aws.ssm
                 .getParameter(
                     {
-                        name: `/aws/service/ami-amazon-linux-latest/amzn2-ami-minimal-hvm-${arch}-ebs`,
+                        name: `/aws/service/ami-amazon-linux-latest/amzn2-ami-minimal-hvm-${
+                            arch === 'amd64' ? 'x86_64' : arch
+                        }-ebs`,
                     },
                     { ...opts, async: true },
                 )
@@ -767,4 +798,68 @@ export function getAmazonLinux2AmiId(
                     throw reason
                 }),
     )
+}
+
+// https://ubuntu.com/server/docs/cloud-images/amazon-ec2
+// Note that 'server-minimal' images are for arm64 only
+export function getUbuntuAmi(
+    args: {
+        arch: Arch | pulumi.Input<Arch>
+        product?:
+            | 'server'
+            | 'server-minimal'
+            | pulumi.Input<'server' | 'server-minimal'>
+        release?:
+            | 'focal'
+            | '20.04'
+            | 'bionic'
+            | '18.04'
+            | 'xenial'
+            | '16.04'
+            | string
+            | pulumi.Input<
+                  | 'focal'
+                  | '20.04'
+                  | 'bionic'
+                  | '18.04'
+                  | 'xenial'
+                  | '16.04'
+                  | string
+              >
+        virtType?: 'pv' | 'hvm' | pulumi.Input<'pv' | 'hvm'>
+        volType?: 'ebs-gp2' | 'ebs-io1' | 'ebs-standard' | 'instance-store'
+    },
+    opts?: pulumi.InvokeOptions,
+) {
+    return pulumi
+        .all([
+            args?.arch,
+            args?.product,
+            args?.release,
+            args?.virtType,
+            args?.volType,
+        ])
+        .apply(
+            async ([arch, product, release, virtType, volType]) =>
+                await aws.ssm
+                    .getParameter(
+                        {
+                            name: `/aws/service/canonical/ubuntu/${
+                                product ?? 'server'
+                            }/${release ?? '20.04'}/stable/current/${
+                                arch === 'x86_64' ? 'amd64' : arch
+                            }/${virtType ?? 'hvm'}/${
+                                volType ?? 'ebs-gp2'
+                            }/ami-id`,
+                        },
+                        { ...opts, async: true },
+                    )
+                    .then((result) => result.value)
+                    .catch((reason) => {
+                        pulumi.log.error(
+                            `Error getting Amazon Linux 2 AMI ID: ${reason}`,
+                        )
+                        throw reason
+                    }),
+        )
 }

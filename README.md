@@ -71,6 +71,8 @@ Routes are created in the VPC subnets for the remaining CIDRs:
 
 The VPN type is OpenVPN, using a shared secret. This is somewhat limiting, but it's supported natively by the USG at home.
 
+This setup was found to work with the unifi router using trial and error.
+
 ### The NAT gatway
 
 AWS NAT gateways are expensive. So instead, the traffic is routed out through the gateway instead. Technically it's double-NAT.

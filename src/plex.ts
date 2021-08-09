@@ -39,6 +39,16 @@ const wasabiUrl =
 const instanceType = config.get<string>('instance-type') || 't3a.micro'
 
 /**
+ * Override the size of the PMS volume
+ */
+const plexVolumeSize = config.getNumber('plex-volume-size-gb') || 8
+
+/**
+ * If false, don't create an S3 bucket.
+ */
+const createS3bucket = config.getBoolean('create-s3-bucket') ?? true
+
+/**
  * offline: plex server is switched off, but EBS/S3 resources are kept online
  * online: plex server is online
  */
@@ -381,8 +391,8 @@ export class Plex extends pulumi.ComponentResource {
                 network: {
                     fixedPrivateIp: true,
                     fixedIpv6: true,
-                    useENI: false,
-                    useEIP: false,
+                    useENI: true,
+                    useEIP: true,
                 },
                 dns: args.dns,
                 notificationsTopicArn: args.notificationsTopicArn,
@@ -400,7 +410,7 @@ export class Plex extends pulumi.ComponentResource {
             `${name}-var-lib-plexmediaserver`,
             {
                 type: 'gp3',
-                size: 2,
+                size: plexVolumeSize,
                 availabilityZone: pulumi
                     .output(args.subnet)
                     .apply((subnet) => subnet.availabilityZone),

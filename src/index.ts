@@ -7,6 +7,7 @@ import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { Instance } from './instance'
 import { DefaultNotifications, NotificationsTopic } from './notifications'
 import { Plex } from './plex'
+import { PlexBuntu } from './plexbuntu'
 import './pulumi-state'
 import { SecurityGroups } from './security-groups'
 import { Vpc } from './vpc'
@@ -153,8 +154,10 @@ export const privateServer = config.getBoolean('enable-test-servers')
       })
     : undefined
 
+const PlexImpl = config.getBoolean('plex-on-ubuntu') ? PlexBuntu : Plex
+
 export const plex = config.getBoolean('enable-plex')
-    ? new Plex('plex', {
+    ? new PlexImpl('plex', {
           subnet: pulumi.output(homeVpc.vpc.publicSubnets).apply(
               (publicSubnets) =>
                   publicSubnets.pop() ??

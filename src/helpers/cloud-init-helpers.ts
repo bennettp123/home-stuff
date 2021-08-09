@@ -22,7 +22,7 @@ export function prependCmds(
             ...userData,
             runcmd: [...cmds, ...(userData.runcmd ?? [])],
         }))
-    }) as typeof userData
+    })
 }
 
 export function appendCmds(
@@ -37,7 +37,7 @@ export function appendCmds(
             ...userData,
             runcmd: [...(userData.runcmd ?? []), ...cmds],
         }))
-    }) as typeof userData
+    })
 }
 
 export function appendCmd(
@@ -47,13 +47,10 @@ export function appendCmd(
     }>,
     cmd: pulumi.Input<string>,
 ) {
-    return pulumi.all([cmd, userData]).apply(
-        ([cmd, userData]) =>
-            ({
-                ...userData,
-                runcmd: [...(userData.runcmd ?? []), cmd],
-            } as typeof userData),
-    )
+    return pulumi.all([cmd, userData]).apply(([cmd, userData]) => ({
+        ...userData,
+        runcmd: [...(userData.runcmd ?? []), cmd],
+    }))
 }
 
 export function prependCmd(
@@ -63,13 +60,10 @@ export function prependCmd(
     }>,
     cmd: pulumi.Input<string>,
 ) {
-    return pulumi.all([cmd, userData]).apply(
-        ([cmd, userData]) =>
-            ({
-                ...userData,
-                runcmd: [cmd, ...(userData.runcmd ?? [])],
-            } as typeof userData),
-    )
+    return pulumi.all([cmd, userData]).apply(([cmd, userData]) => ({
+        ...userData,
+        runcmd: [cmd, ...(userData.runcmd ?? [])],
+    }))
 }
 
 export function addRepo(
@@ -81,16 +75,13 @@ export function addRepo(
         | undefined,
     repo: pulumi.Input<{ [key: string]: any }>,
 ) {
-    return pulumi.all([repo, userData]).apply(
-        ([repo, userData]) =>
-            ({
-                ...(userData ?? {}),
-                yum_repos: {
-                    ...(userData ?? {}).yum_repos,
-                    ...repo,
-                },
-            } as typeof userData),
-    )
+    return pulumi.all([repo, userData]).apply(([repo, userData]) => ({
+        ...(userData ?? {}),
+        yum_repos: {
+            ...(userData ?? {}).yum_repos,
+            ...repo,
+        },
+    }))
 }
 
 export type SshHostKeys = {
