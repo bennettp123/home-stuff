@@ -1,10 +1,12 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
-import { addRepo, appendCmds, getTags } from './helpers'
-import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
-
-const common = new pulumi.Config('common')
-const accountNumber = common.require<string>('aws-account-number')
+import { appendCmds, getTags } from './helpers'
+import {
+    getUbuntuAmi,
+    Instance,
+    InstanceArgs,
+    userData as defaultUserData,
+} from './instance'
 
 const config = new pulumi.Config('plex')
 
@@ -31,7 +33,7 @@ const wasabiCreds = config
  * for valid URLs.
  */
 const wasabiUrl =
-    config.get<string>('wasabi-url') ?? 's3.us-east-1.wasabisys.com'
+    config.get<string>('wasabi-url') ?? 's3.us-west-1.wasabisys.com'
 
 /**
  * Override the instance type.
@@ -42,11 +44,6 @@ const instanceType = config.get<string>('instance-type') || 't3a.micro'
  * Override the size of the PMS volume
  */
 const plexVolumeSize = config.getNumber('plex-volume-size-gb') || 8
-
-/**
- * If false, don't create an S3 bucket.
- */
-const createS3bucket = config.getBoolean('create-s3-bucket') ?? true
 
 /**
  * offline: plex server is switched off, but EBS/S3 resources are kept online
@@ -155,253 +152,6 @@ export class Plex extends pulumi.ComponentResource {
             return creds
         })
 
-        const bucket = new aws.s3.Bucket(
-            `${name}-bucket`,
-            {
-                acl: 'private',
-                serverSideEncryptionConfiguration: {
-                    rule: {
-                        bucketKeyEnabled: true,
-                        applyServerSideEncryptionByDefault: {
-                            sseAlgorithm: 'AES256',
-                        },
-                    },
-                },
-            },
-            { parent: this, protect: true },
-        )
-
-        new aws.s3.BucketOwnershipControls(
-            `${name}-bucket`,
-            {
-                bucket: bucket.id,
-                rule: { objectOwnership: 'BucketOwnerPreferred' },
-            },
-            { parent: this },
-        )
-
-        new aws.s3.BucketPublicAccessBlock(
-            `${name}-bucket`,
-            {
-                bucket: bucket.id,
-                restrictPublicBuckets: true,
-                blockPublicAcls: true,
-                blockPublicPolicy: true,
-                ignorePublicAcls: true,
-            },
-            { parent: this },
-        )
-
-        const userData = appendCmds(
-            addRepo(
-                {
-                    ...defaultUserData,
-                    packages: [
-                        's3fs-fuse',
-                        ...defaultUserData.packages,
-                        'vim',
-                        'plexmediaserver',
-                    ],
-                    write_files: [
-                        ...(defaultUserData.write_files ?? []),
-                        {
-                            path: '/etc/passwd-s3fs',
-                            owner: 'root:root',
-                            permissions: '0600',
-                            content: wasabiCreds,
-                        },
-                    ],
-                    disk_setup: {
-                        ...((
-                            defaultUserData as {
-                                disk_setup?: { [key: string]: unknown }
-                                [key: string]: unknown
-                            }
-                        ).disk_setup ?? {}),
-                        '/dev/sdf': {
-                            table_type: 'gpt',
-                            layout: true,
-                            overwrite: false,
-                        },
-                    },
-                    fs_setup: [
-                        ...((
-                            defaultUserData as {
-                                fs_setup?: [unknown]
-                                [key: string]: unknown
-                            }
-                        ).fs_setup ?? []),
-                        {
-                            label: 'plexmediaserver',
-                            filesystem: 'xfs',
-                            device: '/dev/sdf',
-                        },
-                    ],
-                    mounts: [
-                        [
-                            '/dev/sdf',
-                            '/var/lib/plexmediaserver',
-                            'xfs',
-                            'defaults,noatime,nofail,nosuid,nodev',
-                            '0',
-                            '2',
-                        ],
-                    ],
-                },
-                {
-                    plex: {
-                        name: 'PlexRepo',
-                        baseurl:
-                            'https://downloads.plex.tv/repo/rpm/$basearch/',
-                        enabled: true,
-                        gpgcheck: true,
-                        gpgkey: 'https://downloads.plex.tv/plex-keys/PlexSign.key',
-                    },
-                },
-            ),
-            [
-                'mkdir -p /opt/media-s3',
-                ...(wasabiBucket
-                    ? [
-                          'mkdir -p /opt/media-wasabi',
-                          (() => {
-                              const s3fs = [
-                                  `s3fs#${wasabiBucket}`,
-                                  '/opt/media-wasabi',
-                                  'fuse',
-                                  `_netdev,rw,nosuid,nodev,allow_other,user=plex${
-                                      wasabiUrl ? `,url=${wasabiUrl}` : ''
-                                  }`,
-                                  '0',
-                                  '2',
-                              ].join('    ')
-                              return `grep -Fq "${s3fs}" /etc/fstab || echo "${s3fs}" >> /etc/fstab `
-                          })(),
-                      ]
-                    : []),
-                bucket.id.apply((bucketId) => {
-                    // cloud-init can't mount this itself?!
-                    const s3fs = [
-                        `s3fs#${bucketId}`,
-                        '/opt/media-s3',
-                        'fuse',
-                        '_netdev,rw,nosuid,nodev,allow_other,nonempty,iam_role=auto,endpoint=ap-southeast-2,host=https://s3.dualstack.ap-southeast-2.amazonaws.com,user=plex',
-                        '0',
-                        '2',
-                    ].join('   ')
-                    return `grep -Fq "${s3fs}" /etc/fstab || echo "${s3fs}" >> /etc/fstab `
-                }),
-                // 'mount /opt/media', // fragile: you can mount an s3fs mountpoint multiple times?
-                'while ! [ -e /dev/sdf ]; do sleep 1; done ' +
-                    '&& rm -f /var/lib/cloud/instances/*/sem/config_disk_setup && cloud-init single -n disk_setup ' +
-                    '&& rm -f /var/lib/cloud/instances/*/sem/config_mounts && cloud-init single -n mounts' +
-                    '&& while ! mount | grep -s /var/lib/plexmediaserver; do sleep 1; done ' +
-                    '&& chown -R plex:plex /var/lib/plexmediaserver ' +
-                    '&& sudo systemctl restart plexmediaserver.service',
-            ],
-        )
-
-        const role = new aws.iam.Role(
-            `${name}-role`,
-            {
-                assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal(
-                    aws.iam.Principals.Ec2Principal,
-                ),
-            },
-            { parent: this },
-        )
-
-        new aws.s3.BucketPolicy(
-            `${name}-bucket`,
-            {
-                bucket: bucket.id,
-                policy: pulumi
-                    .all([bucket.arn, role.arn])
-                    .apply(([bucketArn, roleArn]) =>
-                        aws.iam.getPolicyDocument({
-                            version: '2012-10-17',
-                            statements: [
-                                {
-                                    principals: [
-                                        {
-                                            type: 'AWS',
-                                            identifiers: [
-                                                `arn:aws:iam::${accountNumber}:root`,
-                                                roleArn,
-                                            ],
-                                        },
-                                    ],
-                                    resources: [bucketArn, `${bucketArn}/*`],
-                                    actions: ['s3:*'],
-                                    effect: 'Allow',
-                                },
-                            ],
-                        }),
-                    ).json,
-            },
-            { parent: this },
-        )
-
-        const policy = new aws.iam.Policy(
-            `${name}-policy`,
-            {
-                policy: pulumi.output(bucket.arn).apply((bucketArn) =>
-                    aws.iam.getPolicyDocument({
-                        version: '2012-10-17',
-                        statements: [
-                            {
-                                sid: 'AllowBucketAccess',
-                                resources: [bucketArn, `${bucketArn}:*`],
-                                actions: ['s3:*'],
-                                effect: 'Allow',
-                            },
-                            {
-                                sid: 'AllowListHeadBuckets',
-                                resources: ['*'],
-                                actions: ['s3:ListBuckets'],
-                                effect: 'Allow',
-                            },
-                        ],
-                    }),
-                ).json,
-            },
-            { parent: this },
-        )
-
-        new aws.iam.RolePolicyAttachment(
-            `${name}-policy-attach`,
-            {
-                role: role.id,
-                policyArn: policy.arn,
-            },
-            { parent: this },
-        )
-
-        const instance = new Instance(
-            `${name}-server`,
-            {
-                subnetIds: pulumi
-                    .output(args.subnet)
-                    .apply((subnet) => subnet.id)
-                    .apply((id) => [id]),
-                instanceType,
-                vpcId: args.vpcId,
-                securityGroupIds: args.securityGroupIds,
-                userData,
-                network: {
-                    fixedPrivateIp: true,
-                    fixedIpv6: true,
-                    useENI: true,
-                    useEIP: true,
-                },
-                dns: args.dns,
-                notificationsTopicArn: args.notificationsTopicArn,
-                instanceRoleId: role.id,
-                offline: desiredState === 'offline',
-            },
-            { parent: this },
-        )
-
         const kmsKeyId = pulumi.output(
             aws.kms.getKey({ keyId: 'alias/aws/ebs' }, { parent: this }),
         ).arn
@@ -419,6 +169,155 @@ export class Plex extends pulumi.ComponentResource {
                 kmsKeyId,
             },
             { parent: this, protect: true },
+        )
+
+        const userData = appendCmds(
+            pulumi
+                .output(storage.id)
+                .apply((volumeId) => volumeId.replace('-', ''))
+                .apply((volumeId) => {
+                    const device = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${volumeId}`
+                    return {
+                        ...defaultUserData,
+                        timezone: 'Australia/Perth',
+                        package_update: true,
+                        package_upgrade: true,
+                        apt: {
+                            sources: {
+                                plexmediaserver: {
+                                    source: 'deb https://downloads.plex.tv/repo/deb public main',
+                                    keyid: '97203C7B3ADCA79D',
+                                },
+                            },
+                        },
+                        packages: [
+                            'nvme-cli',
+                            's3fs',
+                            'jq',
+                            'bind9-utils',
+                            'traceroute',
+                            'vim',
+                            'plexmediaserver',
+                        ],
+                        write_files: [
+                            ...(defaultUserData.write_files ?? []),
+                            {
+                                path: '/etc/passwd-s3fs',
+                                owner: 'root:root',
+                                permissions: '0600',
+                                content: wasabiCreds,
+                            },
+                        ],
+                        disk_setup: Object.fromEntries([
+                            ...Object.entries(
+                                (
+                                    defaultUserData as {
+                                        disk_setup?: { [key: string]: unknown }
+                                        [key: string]: unknown
+                                    }
+                                ).disk_setup ?? {},
+                            ),
+                            [
+                                device,
+                                {
+                                    table_type: 'gpt',
+                                    layout: true,
+                                    overwrite: false,
+                                },
+                            ],
+                        ]),
+                        fs_setup: [
+                            ...((
+                                defaultUserData as {
+                                    fs_setup?: [unknown]
+                                    [key: string]: unknown
+                                }
+                            ).fs_setup ?? []),
+                            {
+                                label: 'plexmediaserver',
+                                filesystem: 'ext4',
+                                device,
+                            },
+                        ],
+                        mounts: [
+                            [
+                                device,
+                                '/var/lib/plexmediaserver',
+                                'ext4',
+                                'defaults,noatime,nofail,nosuid,nodev',
+                                '0',
+                                '2',
+                            ],
+                        ],
+                    }
+                }),
+            [
+                'mkdir -p /opt/media-s3',
+                ...(wasabiBucket
+                    ? [
+                          'mkdir -p /opt/media-wasabi',
+                          (() => {
+                              const s3fs = [
+                                  wasabiBucket,
+                                  '/opt/media-wasabi',
+                                  'fuse.s3fs',
+                                  `_netdev,rw,nosuid,nodev,allow_other,user=plex${
+                                      wasabiUrl ? `,url=${wasabiUrl}` : ''
+                                  }`,
+                                  '0',
+                                  '2',
+                              ].join('    ')
+                              return `grep -Fq "${s3fs}" /etc/fstab || echo "${s3fs}" >> /etc/fstab `
+                          })(),
+                      ]
+                    : []),
+                pulumi
+                    .output(storage.id)
+                    .apply((volumeId) => volumeId.replace('-', ''))
+                    .apply((volumeId) => {
+                        const device = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${volumeId}-part1`
+                        return (
+                            `while ! [ -e '${device}' ]; do sleep 1; done ` +
+                            '&& rm -f /var/lib/cloud/instances/*/sem/config_disk_setup && cloud-init single -n disk_setup ' +
+                            '&& rm -f /var/lib/cloud/instances/*/sem/config_mounts && cloud-init single -n mounts' +
+                            '&& while ! mount | grep -s /var/lib/plexmediaserver; do sleep 1; done ' +
+                            '&& chown -R plex:plex /var/lib/plexmediaserver ' +
+                            '&& mount -a || true' +
+                            '&& systemctl restart plexmediaserver.service'
+                        )
+                    }),
+            ],
+        )
+
+        const instance = new Instance(
+            `${name}-server`,
+            {
+                amiId: getUbuntuAmi(
+                    {
+                        arch: 'arm64',
+                    },
+                    { parent: this },
+                ),
+                subnetIds: pulumi
+                    .output(args.subnet)
+                    .apply((subnet) => subnet.id)
+                    .apply((id) => [id]),
+                instanceType,
+                vpcId: args.vpcId,
+                securityGroupIds: args.securityGroupIds,
+                userData,
+                network: {
+                    fixedPrivateIp: true,
+                    fixedIpv6: true,
+                    useENI: true,
+                    useEIP: true,
+                },
+                dns: args.dns,
+                notificationsTopicArn: args.notificationsTopicArn,
+                offline: desiredState === 'offline',
+                rootVolumeSize: 8,
+            },
+            { parent: this },
         )
 
         if (instance.instanceId) {

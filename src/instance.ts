@@ -11,6 +11,17 @@ import {
     SshHostKeys,
 } from './helpers'
 
+/*
+
+TODOs:
+ - The ENI-disabled code path is... not necessary. Remove it.
+ - There's too many ways to override the default userdata. Simplify.
+ - Currently designed around Amazon Linux 2, but the PlexBuntu class
+   uses this -- including the userData stuff -- with ubuntu. Maybe
+   the userData stuff belongs elsewhere.
+
+*/
+
 export const config = new pulumi.Config('instance')
 
 export type SshKey = string
@@ -121,33 +132,18 @@ export interface InstanceArgs {
      * userdata sets up the EPEL repo, updates all packages, and creates a
      * users (if default-users is defined in config).
      */
-    userData?:
-        | pulumi.Input<{
-              write_files?:
-                  | {
-                        path?: string | undefined
-                        owner?: string | undefined
-                        permissions?: string | undefined
-                        content?: string | undefined
-                        [key: string]: unknown
-                    }[]
-                  | undefined
-              [key: string]: unknown
-          }>
-        | Promise<
-              pulumi.Input<{
-                  write_files?:
-                      | {
-                            path?: string | undefined
-                            owner?: string | undefined
-                            permissions?: string | undefined
-                            content?: string | undefined
-                            [key: string]: unknown
-                        }[]
-                      | undefined
+    userData?: pulumi.Input<{
+        write_files?:
+            | {
+                  path?: string | undefined
+                  owner?: string | undefined
+                  permissions?: string | undefined
+                  content?: string | undefined
                   [key: string]: unknown
-              }>
-          >
+              }[]
+            | undefined
+        [key: string]: unknown
+    }>
     /**
      * if set, A and AAAA records will be created
      * with the hostname and zone specified
