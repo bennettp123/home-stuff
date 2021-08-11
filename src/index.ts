@@ -48,7 +48,7 @@ new DefaultNotifications(
 const homeVpc = new Vpc('home', {
     cidrBlock: config.require<string>('vpc-cidr-block'),
     numberOfNatGateways: 0,
-    numberOfAvailabilityZones: 1,
+    numberOfAvailabilityZones: 3,
 })
 
 const { vpcId, vpcArn, publicSubnetIds, privateSubnetIds } = homeVpc
@@ -155,15 +155,28 @@ export const privateServer = config.getBoolean('enable-test-servers')
 
 export const plex = config.getBoolean('enable-plex')
     ? new Plex('plex', {
-          subnet: pulumi.output(homeVpc.vpc.publicSubnets).apply(
-              (publicSubnets) =>
-                  publicSubnets.pop() ??
-                  (() => {
-                      throw new pulumi.RunError(
-                          'could not get first private subnet',
+          subnet: pulumi
+              .output(homeVpc.vpc.publicSubnets)
+              .apply((publicSubnets) =>
+                  pulumi
+                      .all(
+                          publicSubnets.map((s) => ({
+                              s,
+                              az: s.subnet.availabilityZone,
+                          })),
                       )
-                  })(),
-          ).subnet,
+                      .apply(
+                          (subnets) =>
+                              subnets
+                                  .filter((s) => s.az === 'ap-southeast-2c')
+                                  .pop() ??
+                              (() => {
+                                  throw new pulumi.RunError(
+                                      'could not get public subnet in ap-southeast-2c',
+                                  )
+                              })(),
+                      ),
+              ).s.subnet,
           vpcId,
           securityGroupIds: [
               securityGroups.essentialIcmpSecurityGroup.id,
@@ -174,6 +187,7 @@ export const plex = config.getBoolean('enable-plex')
           dns: {
               zone: 'Z1LNE5PQ9LO13V',
               hostname: 'plex.home.bennettp123.com',
+              preferPrivateIP: true,
           },
           notificationsTopicArn: notifications.default.topicArn,
       })

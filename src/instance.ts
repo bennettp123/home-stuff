@@ -151,6 +151,7 @@ export interface InstanceArgs {
     dns?: {
         zone: pulumi.Input<string>
         hostname?: pulumi.Input<string>
+        preferPrivateIP?: boolean
     }
     network?: {
         /**
@@ -625,6 +626,7 @@ export class Instance extends pulumi.ComponentResource {
 
         this.interfaceId = nic?.id ?? instance?.primaryNetworkInterfaceId
         this.instanceId = instance?.spotInstanceId
+        this.privateIp = nic ? nic.privateIp : instance?.privateIp ?? privateIp
 
         if (eip && instance) {
             // associates the static IP with the instance
@@ -636,12 +638,14 @@ export class Instance extends pulumi.ComponentResource {
                 },
                 { parent: this },
             )
-            this.ip = eip.publicIp
+            this.ip = args.dns?.preferPrivateIP
+                ? this.privateIp ?? eip.publicIp
+                : eip.publicIp
         } else {
             this.ip = pulumi
                 .all([instance?.publicIp, instance?.privateIp, privateIp])
                 .apply(([publicIp, instancePrivateIp, privateIp]) =>
-                    publicIp && publicIp !== ''
+                    publicIp && publicIp !== '' && !args.dns?.preferPrivateIP
                         ? publicIp
                         : instancePrivateIp && instancePrivateIp !== ''
                         ? instancePrivateIp
@@ -650,7 +654,6 @@ export class Instance extends pulumi.ComponentResource {
         }
 
         this.publicIp = eip ? eip.publicIp : instance?.publicIp
-        this.privateIp = nic ? nic.privateIp : instance?.privateIp ?? privateIp
         this.ipv6 = nic
             ? pulumi
                   .all([nic.ipv6Addresses])

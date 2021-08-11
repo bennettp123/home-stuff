@@ -87,6 +87,12 @@ export interface PlexArgs extends Partial<InstanceArgs> {
          *   - myhost
          */
         hostname: pulumi.Input<string>
+
+        /**
+         * If true, the A record will use the private IP, even if the instance
+         * has a public IP.
+         */
+        preferPrivateIP?: boolean
     }
 
     /**
@@ -161,6 +167,7 @@ export class Plex extends pulumi.ComponentResource {
             {
                 type: 'gp3',
                 size: plexVolumeSize,
+                snapshotId: 'snap-0fa0da7e793226d71',
                 availabilityZone: pulumi
                     .output(args.subnet)
                     .apply((subnet) => subnet.availabilityZone),

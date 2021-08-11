@@ -30,7 +30,7 @@ config:
     sudoers:
     - bennett
   plex:create-s3-bucket: "false"
-  plex:instance-type: t4g.small
+  plex:instance-type: a1.medium
   plex:state: online
   plex:wasabi-bucket: plex-bucket-495b3c2
   plex:wasabi-creds:
