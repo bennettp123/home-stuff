@@ -275,6 +275,11 @@ export class Instance extends pulumi.ComponentResource {
      */
     interfaceId?: pulumi.Output<string>
 
+    /**
+     * The pulumi urn of the instance
+     */
+    instanceUrn?: pulumi.Output<string>
+
     constructor(
         name: string,
         args: InstanceArgs,
@@ -607,9 +612,11 @@ export class Instance extends pulumi.ComponentResource {
                       },
                   )
 
-        // aws.ec2.SpotInstanceRequest doesn't propagate tags to the instance,
-        // but we can do it ourselves
         if (instance !== undefined) {
+            this.instanceUrn = instance.urn
+
+            // aws.ec2.SpotInstanceRequest doesn't propagate tags to the
+            // instance, but we can do it ourselves!
             pulumi
                 .all([instance.spotInstanceId, instance.tags])
                 .apply(([instanceId, tags]) =>

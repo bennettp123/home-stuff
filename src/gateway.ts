@@ -146,6 +146,11 @@ export class Gateway extends pulumi.ComponentResource {
      */
     interfaceId: pulumi.Output<string>
 
+    /**
+     * The pulumi urn of the gateway instance
+     */
+    instanceUrn: pulumi.Output<string>
+
     constructor(
         name: string,
         args: GatewayArgs,
@@ -272,5 +277,6 @@ export class Gateway extends pulumi.ComponentResource {
         this.interfaceId = instance.interfaceId!
         this.publicIp = instance.publicIp!
         this.privateIp = instance.privateIp!
+        this.instanceUrn = instance.instanceUrn!
     }
 }

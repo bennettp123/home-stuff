@@ -103,29 +103,34 @@ export interface PlexArgs extends Partial<InstanceArgs> {
 
 export class Plex extends pulumi.ComponentResource {
     /**
-     * The public IP address of the kodi instance.
+     * The public IP address of the plex instance.
      */
     ip: pulumi.Output<string>
 
     /**
-     * The public IP address of the kodi instance.
+     * The public IP address of the plex instance.
      */
     publicIp: pulumi.Output<string>
 
     /**
-     * The private IP address of the kodi instance.
+     * The private IP address of the plex instance.
      */
     privateIp: pulumi.Output<string>
 
     /**
-     * The IPv6 address of the kodi instance.
+     * The IPv6 address of the plex instance.
      */
     ipv6: pulumi.Output<string>
 
     /**
-     * The hostname of the kodi instance
+     * The hostname of the plex instance
      */
     hostname: pulumi.Output<string>
+
+    /**
+     * The pulumi urn of the plex instance
+     */
+    instanceUrn: pulumi.Output<string>
 
     constructor(
         name: string,
@@ -171,19 +176,38 @@ export class Plex extends pulumi.ComponentResource {
                 availabilityZone: pulumi
                     .output(args.subnet)
                     .apply((subnet) => subnet.availabilityZone),
-                tags: getTags({ Name: `${name}-var` }),
+                tags: getTags({ Name: `${name}-var-lib-plexmediaserver` }),
                 encrypted: true,
                 kmsKeyId,
             },
             { parent: this, protect: true },
         )
 
+        const cache = new aws.ebs.Volume(
+            `${name}-var-cache-s3fs`,
+            {
+                type: 'gp3',
+                size: 4,
+                availabilityZone: pulumi
+                    .output(args.subnet)
+                    .apply((subnet) => subnet.availabilityZone),
+                tags: getTags({ Name: `${name}-var-cache-s3fs` }),
+                encrypted: true,
+                kmsKeyId,
+            },
+            { parent: this },
+        )
+
         const userData = appendCmds(
             pulumi
-                .output(storage.id)
-                .apply((volumeId) => volumeId.replace('-', ''))
-                .apply((volumeId) => {
-                    const device = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${volumeId}`
+                .all([storage.id, cache.id])
+                .apply(([plexVolumeId, cacheVolumeId]) => [
+                    plexVolumeId.replace('-', ''),
+                    cacheVolumeId.replace('-', ''),
+                ])
+                .apply(([plexVolumeId, cacheVolumeId]) => {
+                    const plexDevice = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${plexVolumeId}`
+                    const cacheDevice = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${cacheVolumeId}`
                     return {
                         ...defaultUserData,
                         timezone: 'Australia/Perth',
@@ -214,6 +238,29 @@ export class Plex extends pulumi.ComponentResource {
                                 permissions: '0600',
                                 content: wasabiCreds,
                             },
+                            {
+                                path: '/etc/cron.hourly/clean-up-s3fs-cache',
+                                owner: 'root:root',
+                                permissions: '0755',
+                                content: `#!/bin/bash
+
+                                CACHE_DIR="/var/cache/s3fs/${wasabiBucket?.replace(
+                                    '/',
+                                    '\\/',
+                                )}"
+                                ENSURE_FREE=$(( 1 * 1024 * 1024 )) # 1GB
+
+                                for file in \`find  -type f | xargs ls -ut1 | tac\`; do
+                                  if [ "$(df --output=avail "$CACHE_DIR" | tail -n1)" -gt "$ENSURE_FREE" ]; then
+                                    echo done
+                                    exit 0
+                                  else
+                                    echo "deleting $file"
+                                    rm "$file"
+                                  fi
+                                done
+                                `,
+                            },
                         ],
                         disk_setup: Object.fromEntries([
                             ...Object.entries(
@@ -225,7 +272,13 @@ export class Plex extends pulumi.ComponentResource {
                                 ).disk_setup ?? {},
                             ),
                             [
-                                device,
+                                plexDevice,
+                                {
+                                    table_type: 'gpt',
+                                    layout: true,
+                                    overwrite: false,
+                                },
+                                cacheDevice,
                                 {
                                     table_type: 'gpt',
                                     layout: true,
@@ -241,17 +294,30 @@ export class Plex extends pulumi.ComponentResource {
                                 }
                             ).fs_setup ?? []),
                             {
-                                label: 'plexmediaserver',
+                                label: '_var_lib_plexmed',
                                 filesystem: 'ext4',
-                                device,
+                                device: plexDevice,
+                            },
+                            {
+                                label: '_var_cache_s3fs',
+                                filesystem: 'ext4',
+                                device: cacheDevice,
                             },
                         ],
                         mounts: [
                             [
-                                device,
+                                'LABEL=_var_lib_plexmed',
                                 '/var/lib/plexmediaserver',
                                 'ext4',
                                 'defaults,noatime,nofail,nosuid,nodev',
+                                '0',
+                                '2',
+                            ],
+                            [
+                                'LABEL=_var_cache_s3fs',
+                                '/var/cache/s3fs',
+                                'ext4',
+                                'defaults,atime,nofail,nosuid,nodev',
                                 '0',
                                 '2',
                             ],
@@ -259,7 +325,6 @@ export class Plex extends pulumi.ComponentResource {
                     }
                 }),
             [
-                'mkdir -p /opt/media-s3',
                 ...(wasabiBucket
                     ? [
                           'mkdir -p /opt/media-wasabi',
@@ -270,7 +335,7 @@ export class Plex extends pulumi.ComponentResource {
                                   'fuse.s3fs',
                                   `_netdev,rw,nosuid,nodev,allow_other,user=plex${
                                       wasabiUrl ? `,url=${wasabiUrl}` : ''
-                                  }`,
+                                  },use_cache=/var/cache/s3fs`,
                                   '0',
                                   '2',
                               ].join('    ')
@@ -279,18 +344,25 @@ export class Plex extends pulumi.ComponentResource {
                       ]
                     : []),
                 pulumi
-                    .output(storage.id)
-                    .apply((volumeId) => volumeId.replace('-', ''))
-                    .apply((volumeId) => {
-                        const device = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${volumeId}-part1`
+                    .all([storage.id, cache.id])
+                    .apply(([plexVolumeId, cacheVolumeId]) => [
+                        plexVolumeId.replace('-', ''),
+                        cacheVolumeId.replace('-', ''),
+                    ])
+                    .apply(([plexVolumeId, cacheVolumeId]) => {
+                        const plexDevice = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${plexVolumeId}-part1`
+                        const cacheDevice = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${cacheVolumeId}-part1`
                         return (
-                            `while ! [ -e '${device}' ]; do sleep 1; done ` +
+                            'systemctl stop plexmediaserver.service' +
+                            `&& while ! [ -e '${plexDevice}' ]; do sleep 1; done ` +
+                            `&& while ! [ -e '${cacheDevice}' ]; do sleep 1; done ` +
                             '&& rm -f /var/lib/cloud/instances/*/sem/config_disk_setup && cloud-init single -n disk_setup ' +
                             '&& rm -f /var/lib/cloud/instances/*/sem/config_mounts && cloud-init single -n mounts' +
                             '&& while ! mount | grep -s /var/lib/plexmediaserver; do sleep 1; done ' +
                             '&& chown -R plex:plex /var/lib/plexmediaserver ' +
+                            '&& while ! mount | grep -s /var/cache/s3fs; do sleep 1; done ' +
                             '&& mount -a || true' +
-                            '&& systemctl restart plexmediaserver.service'
+                            '&& systemctl start plexmediaserver.service'
                         )
                     }),
             ],
@@ -329,11 +401,23 @@ export class Plex extends pulumi.ComponentResource {
 
         if (instance.instanceId) {
             new aws.ec2.VolumeAttachment(
-                `${name}-var`,
+                `${name}-var-lib-plexmediaserver`,
                 {
                     volumeId: storage.id,
                     instanceId: instance.instanceId,
                     deviceName: '/dev/sdf',
+                },
+                { parent: this },
+            )
+        }
+
+        if (instance.instanceId) {
+            new aws.ec2.VolumeAttachment(
+                `${name}-var-cache-s3fs`,
+                {
+                    volumeId: cache.id,
+                    instanceId: instance.instanceId,
+                    deviceName: '/dev/sdg',
                 },
                 { parent: this },
             )
@@ -353,5 +437,6 @@ export class Plex extends pulumi.ComponentResource {
         )
         this.publicIp = instance.publicIp!
         this.privateIp = instance.privateIp!
+        this.instanceUrn = instance.instanceUrn!
     }
 }

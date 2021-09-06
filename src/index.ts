@@ -65,8 +65,69 @@ const securityGroups = new SecurityGroups('home', {
     vpcId,
 })
 
+const apSoutheast2c = {
+    public: pulumi.output(homeVpc.vpc.publicSubnets).apply((publicSubnets) =>
+        pulumi
+            .all(
+                publicSubnets.map((s) => ({
+                    s,
+                    az: s.subnet.availabilityZone,
+                })),
+            )
+            .apply(
+                (subnets) =>
+                    subnets.filter((s) => s.az === 'ap-southeast-2c').pop() ??
+                    (() => {
+                        throw new pulumi.RunError(
+                            'could not get public subnet in ap-southeast-2c',
+                        )
+                    })(),
+            ),
+    ).s.subnet,
+    private: pulumi.output(homeVpc.vpc.privateSubnets).apply((privateSubnets) =>
+        pulumi
+            .all(
+                privateSubnets.map((s) => ({
+                    s,
+                    az: s.subnet.availabilityZone,
+                })),
+            )
+            .apply(
+                (subnets) =>
+                    subnets.filter((s) => s.az === 'ap-southeast-2c').pop() ??
+                    (() => {
+                        throw new pulumi.RunError(
+                            'could not get public subnet in ap-southeast-2c',
+                        )
+                    })(),
+            ),
+    ).s.subnet,
+    isolated: pulumi
+        .output(homeVpc.vpc.isolatedSubnets)
+        .apply((isolatedSubnets) =>
+            pulumi
+                .all(
+                    isolatedSubnets.map((s) => ({
+                        s,
+                        az: s.subnet.availabilityZone,
+                    })),
+                )
+                .apply(
+                    (subnets) =>
+                        subnets
+                            .filter((s) => s.az === 'ap-southeast-2c')
+                            .pop() ??
+                        (() => {
+                            throw new pulumi.RunError(
+                                'could not get public subnet in ap-southeast-2c',
+                            )
+                        })(),
+                ),
+        ).s.subnet,
+}
+
 export const gateway = new Gateway('home-gateway', {
-    subnetIds: publicSubnetIds,
+    subnetIds: apSoutheast2c.public.id.apply((id) => [id]),
     vpcId,
     securityGroupIds: [
         securityGroups.gatewaySecurityGroup.id,
@@ -155,28 +216,7 @@ export const privateServer = config.getBoolean('enable-test-servers')
 
 export const plex = config.getBoolean('enable-plex')
     ? new Plex('plex', {
-          subnet: pulumi
-              .output(homeVpc.vpc.publicSubnets)
-              .apply((publicSubnets) =>
-                  pulumi
-                      .all(
-                          publicSubnets.map((s) => ({
-                              s,
-                              az: s.subnet.availabilityZone,
-                          })),
-                      )
-                      .apply(
-                          (subnets) =>
-                              subnets
-                                  .filter((s) => s.az === 'ap-southeast-2c')
-                                  .pop() ??
-                              (() => {
-                                  throw new pulumi.RunError(
-                                      'could not get public subnet in ap-southeast-2c',
-                                  )
-                              })(),
-                      ),
-              ).s.subnet,
+          subnet: apSoutheast2c.public,
           vpcId,
           securityGroupIds: [
               securityGroups.essentialIcmpSecurityGroup.id,
