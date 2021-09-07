@@ -108,6 +108,7 @@ export const userData = {
     ],
     runcmd: ['systemctl reload crond'],
     bootcmd: [],
+    cloud_final_modules: [['ssh', 'always']],
 }
 
 export interface InstanceArgs {
