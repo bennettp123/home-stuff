@@ -233,6 +233,28 @@ export const plex = config.getBoolean('enable-plex')
       })
     : undefined
 
+export const homeBridge = new Instance('homebridge', {
+    subnetIds: privateSubnetIds,
+    instanceType: 't4g.nano',
+    vpcId,
+    securityGroupIds: [
+        securityGroups.allowEgressToAllSecurityGroup.id,
+        securityGroups.essentialIcmpSecurityGroup.id,
+        securityGroups.allowInboundFromHome.id,
+        securityGroups.allowSshFromTrustedSources.id,
+    ],
+    dns: {
+        zone: 'Z1LNE5PQ9LO13V',
+        hostname: 'homebridge.home.bennettp123.com',
+        preferPrivateIP: true,
+    },
+    network: {
+        fixedPrivateIp: true,
+        fixedIpv6: true,
+        useENI: true,
+    },
+})
+
 export const cluster = config.getBoolean('enable-ecs')
     ? new Cluster('home', {})
     : null
