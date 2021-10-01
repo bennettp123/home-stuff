@@ -264,7 +264,7 @@ export const homeBridge = config.getBoolean('enable-homebridge')
           ],
           dns: {
               zone: 'Z1LNE5PQ9LO13V',
-              hostname: 'homebridge.home.bennettp123.com',
+              hostname: 'homebridge2.home.bennettp123.com',
               preferPrivateIP: true,
           },
           network: {
@@ -274,6 +274,34 @@ export const homeBridge = config.getBoolean('enable-homebridge')
           },
       })
     : undefined
+
+new aws.route53.Record(
+    'homebridge-aaaa',
+    {
+        name: 'homebridge.home.bennettp123.com',
+        type: 'AAAA',
+        zoneId: 'Z1LNE5PQ9LO13V',
+        ttl: 300,
+        records: ['2404:bf40:e402:178:ba27:ebff:fe79:4d82'],
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
+
+new aws.route53.Record(
+    'homebridge-a',
+    {
+        name: 'homebridge.home.bennettp123.com',
+        type: 'A',
+        zoneId: 'Z1LNE5PQ9LO13V',
+        ttl: 300,
+        records: ['192.168.178.236'],
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
 
 export const cluster = config.getBoolean('enable-ecs')
     ? new Cluster('home', {})
