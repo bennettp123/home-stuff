@@ -11,6 +11,7 @@ export interface NetworkingArgs {
 }
 
 export class Vpc extends pulumi.ComponentResource {
+    cidrBlock: pulumi.Output<string>
     dbSubnetIds: pulumi.Output<string[]>
     privateSubnetIds: pulumi.Output<string[]>
     publicSubnetIds: pulumi.Output<string[]>
@@ -35,6 +36,8 @@ export class Vpc extends pulumi.ComponentResource {
         opts?: pulumi.ComponentResourceOptions | undefined,
     ) {
         super('bennettp123:vpc/Vpc', name, {}, opts)
+
+        this.cidrBlock = pulumi.output(cidrBlock)
 
         const vpcName = `${name}-vpc`
         const vpc = new awsx.ec2.Vpc(

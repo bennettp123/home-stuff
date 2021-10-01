@@ -51,7 +51,14 @@ const homeVpc = new Vpc('home', {
     numberOfAvailabilityZones: 3,
 })
 
-const { vpcId, vpcArn, publicSubnetIds, privateSubnetIds } = homeVpc
+const {
+    vpcId,
+    vpcArn,
+    publicSubnetIds,
+    privateSubnetIds,
+    ipv6PublicCidrs,
+    cidrBlock,
+} = homeVpc
 
 export const vpc = {
     id: vpcId,
@@ -59,6 +66,17 @@ export const vpc = {
     publicSubnetIds,
     privateSubnetIds,
     urn: homeVpc.urn,
+    ipv6PublicCidrs,
+    cidrBlock,
+    privateSubnetCidrs: homeVpc.vpc.privateSubnets.then((s) =>
+        s.map((s) => s.subnet.cidrBlock),
+    ),
+    publicSubnetCidrs: homeVpc.vpc.publicSubnets.then((s) =>
+        s.map((s) => s.subnet.cidrBlock),
+    ),
+    isolatedSubnetCidrs: homeVpc.vpc.isolatedSubnets.then((s) =>
+        s.map((s) => s.subnet.cidrBlock),
+    ),
 }
 
 const securityGroups = new SecurityGroups('home', {
@@ -233,27 +251,29 @@ export const plex = config.getBoolean('enable-plex')
       })
     : undefined
 
-export const homeBridge = new Instance('homebridge', {
-    subnetIds: privateSubnetIds,
-    instanceType: 't4g.nano',
-    vpcId,
-    securityGroupIds: [
-        securityGroups.allowEgressToAllSecurityGroup.id,
-        securityGroups.essentialIcmpSecurityGroup.id,
-        securityGroups.allowInboundFromHome.id,
-        securityGroups.allowSshFromTrustedSources.id,
-    ],
-    dns: {
-        zone: 'Z1LNE5PQ9LO13V',
-        hostname: 'homebridge.home.bennettp123.com',
-        preferPrivateIP: true,
-    },
-    network: {
-        fixedPrivateIp: true,
-        fixedIpv6: true,
-        useENI: true,
-    },
-})
+export const homeBridge = config.getBoolean('enable-homebridge')
+    ? new Instance('homebridge', {
+          subnetIds: privateSubnetIds,
+          instanceType: 't4g.nano',
+          vpcId,
+          securityGroupIds: [
+              securityGroups.allowEgressToAllSecurityGroup.id,
+              securityGroups.essentialIcmpSecurityGroup.id,
+              securityGroups.allowInboundFromHome.id,
+              securityGroups.allowSshFromTrustedSources.id,
+          ],
+          dns: {
+              zone: 'Z1LNE5PQ9LO13V',
+              hostname: 'homebridge.home.bennettp123.com',
+              preferPrivateIP: true,
+          },
+          network: {
+              fixedPrivateIp: true,
+              fixedIpv6: true,
+              useENI: true,
+          },
+      })
+    : undefined
 
 export const cluster = config.getBoolean('enable-ecs')
     ? new Cluster('home', {})
