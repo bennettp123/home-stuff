@@ -3,14 +3,14 @@
     "main": "src/index.ts",
     "devDependencies": {
         "@types/netmask": "^1.0.30",
-        "@types/node": "^10.17.60",
-        "prettier": "^2.3.2"
+        "@types/node": "^16.10.2",
+        "prettier": "^2.4.1"
     },
     "dependencies": {
-        "@pulumi/aws": "^4.13.0",
-        "@pulumi/awsx": "^0.30.0",
-        "@pulumi/docker": "^3.0.0",
-        "@pulumi/pulumi": "^3.7.1",
+        "@pulumi/aws": "^4.22.1",
+        "@pulumi/awsx": "^0.32.0",
+        "@pulumi/docker": "^3.1.0",
+        "@pulumi/pulumi": "^3.13.2",
         "@pulumi/random": "^4.2.0",
         "@pulumi/tls": "^4.0.0",
         "ip-address": "^8.1.0",
