@@ -3,6 +3,7 @@ import * as pulumi from '@pulumi/pulumi'
 import { DefaultRoutes } from './default-routes'
 import { Cluster } from './ecs-cluster'
 import { Gateway } from './gateway'
+import { getTags } from './helpers'
 import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { Instance } from './instance'
 import { DefaultNotifications, NotificationsTopic } from './notifications'
@@ -302,6 +303,33 @@ new aws.route53.Record(
         deleteBeforeReplace: true,
     },
 )
+
+const certbotUser = new aws.iam.User('homebridge-certbot', {
+    forceDestroy: true,
+    tags: getTags(),
+})
+
+new aws.iam.UserPolicy('homebridge-certbot', {
+    user: certbotUser.id,
+    policy: pulumi.output(
+        aws.iam.getPolicyDocument({
+            statements: [
+                {
+                    sid: 'AllowRead',
+                    effect: 'Allow',
+                    actions: ['route53:ListHostedZones', 'route53:GetChange'],
+                    resources: ['*'],
+                },
+                {
+                    sid: 'AllowUpdate',
+                    effect: 'Allow',
+                    actions: ['route53:ChangeResourceRecordSets'],
+                    resources: ['arn:aws:route53:::hostedzone/Z1LNE5PQ9LO13V'],
+                },
+            ],
+        }),
+    ).json,
+})
 
 export const cluster = config.getBoolean('enable-ecs')
     ? new Cluster('home', {})
