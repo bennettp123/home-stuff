@@ -283,7 +283,7 @@ new aws.route53.Record(
         type: 'AAAA',
         zoneId: 'Z1LNE5PQ9LO13V',
         ttl: 300,
-        records: ['2404:bf40:e402:178:ba27:ebff:fe79:4d82'],
+        records: ['2404:bf40:e402:33:ba27:ebff:fe79:4d82'],
     },
     {
         deleteBeforeReplace: true,
@@ -297,7 +297,7 @@ new aws.route53.Record(
         type: 'A',
         zoneId: 'Z1LNE5PQ9LO13V',
         ttl: 300,
-        records: ['192.168.178.236'],
+        records: ['192.168.33.9'],
     },
     {
         deleteBeforeReplace: true,
