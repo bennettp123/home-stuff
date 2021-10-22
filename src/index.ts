@@ -6,6 +6,7 @@ import { Gateway } from './gateway'
 import { getTags } from './helpers'
 import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { Instance } from './instance'
+import { MailServer } from './mail-server'
 import { DefaultNotifications, NotificationsTopic } from './notifications'
 import { Plex } from './plex'
 import './pulumi-state'
@@ -329,6 +330,10 @@ new aws.iam.UserPolicy('homebridge-certbot', {
             ],
         }),
     ).json,
+})
+
+const ses = new MailServer('home.bennettp123.com', {
+    domain: 'home.bennettp123.com',
 })
 
 export const cluster = config.getBoolean('enable-ecs')
