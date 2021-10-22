@@ -7,6 +7,7 @@ import { getTags } from './helpers'
 import { Homebridge as HomebridgeEcs } from './homebridge-ecs'
 import { Instance } from './instance'
 import { MailServer } from './mail-server'
+import { MailUser } from './mail-user'
 import { DefaultNotifications, NotificationsTopic } from './notifications'
 import { Plex } from './plex'
 import './pulumi-state'
@@ -335,6 +336,14 @@ new aws.iam.UserPolicy('homebridge-certbot', {
 const ses = new MailServer('home.bennettp123.com', {
     domain: 'home.bennettp123.com',
 })
+
+export const epsonPrinterSmtpCreds = new MailUser('epson', {
+    mailServer: ses,
+})
+
+export const mailServer = {
+    ...ses.endpoint,
+}
 
 export const cluster = config.getBoolean('enable-ecs')
     ? new Cluster('home', {})

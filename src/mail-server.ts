@@ -15,6 +15,13 @@ const accountNumber = config.require<string>('aws-account-number')
 export class MailServer extends pulumi.ComponentResource {
     bounceTopic: aws.sns.Topic
     complaintTopic: aws.sns.Topic
+    identity: aws.ses.DomainIdentity
+
+    endpoint = {
+        hostname: 'email-smtp.ap-southeast-2.amazonaws.com',
+        port: 587,
+        method: 'STARTTLS',
+    }
 
     constructor(
         name: string,
@@ -35,7 +42,7 @@ export class MailServer extends pulumi.ComponentResource {
     ) {
         super('bennettp123:mail-server/MailServer', name, {}, opts)
 
-        const ses = new aws.ses.DomainIdentity(
+        this.identity = new aws.ses.DomainIdentity(
             name,
             {
                 domain: args.domain,
@@ -61,7 +68,7 @@ export class MailServer extends pulumi.ComponentResource {
                 type: 'TXT',
                 zoneId,
                 ttl: 300,
-                records: [ses.verificationToken],
+                records: [this.identity.verificationToken],
             },
             { parent: this },
         )
@@ -99,63 +106,63 @@ export class MailServer extends pulumi.ComponentResource {
             ),
         )
 
-        pulumi.output(verified.domain).apply((domain) => {
-            const mailFromDomain = `home.${domain}`
+        const mailFrom = new aws.ses.MailFrom(
+            name,
+            {
+                domain: verified.domain,
+                mailFromDomain: pulumi
+                    .output(verified.domain)
+                    .apply((domain) => `home.${domain}`),
+                behaviorOnMxFailure: 'RejectMessage',
+            },
+            { parent: this },
+        )
 
-            const mailFrom = new aws.ses.MailFrom(
-                name,
-                {
-                    domain: verified.domain,
-                    mailFromDomain,
-                    behaviorOnMxFailure: 'RejectMessage',
-                },
-                { parent: this },
-            )
+        new aws.route53.Record(
+            `${name}-mx`,
+            {
+                name: mailFrom.mailFromDomain,
+                type: 'MX',
+                zoneId,
+                ttl: 300,
+                records: ['10 feedback-smtp.ap-southeast-2.amazonses.com'],
+            },
+            { parent: this },
+        )
 
-            new aws.route53.Record(
-                `${name}-mx`,
-                {
-                    name: mailFrom.mailFromDomain,
-                    type: 'MX',
-                    zoneId,
-                    ttl: 300,
-                    records: ['10 feedback-smtp.ap-southeast-2.amazonses.com'],
-                },
-                { parent: this },
-            )
+        new aws.route53.Record(
+            `${name}-spf`,
+            {
+                name: mailFrom.mailFromDomain,
+                type: 'TXT',
+                zoneId,
+                ttl: 300,
+                records: ['v=spf1 include:amazonses.com -all'],
+            },
+            { parent: this },
+        )
 
-            new aws.route53.Record(
-                `${name}-spf`,
-                {
-                    name: mailFrom.mailFromDomain,
-                    type: 'TXT',
-                    zoneId,
-                    ttl: 300,
-                    records: ['v=spf1 include:amazonses.com -all'],
-                },
-                { parent: this },
-            )
-        })
-
-        const policyTemplate = pulumi.output(ses.arn).apply((arn) => ({
-            sid: 'AllowSES',
-            principals: [
-                { type: 'Service', identifiers: ['ses.amazonaws.com'] },
-            ],
-            actions: ['sns:Publish'],
-            conditions: [
-                {
-                    test: 'StringEquals',
-                    variable: 'AWS:SourceAccount',
-                    values: [accountNumber],
-                },
-                {
-                    test: 'StringEquals',
-                    variable: 'AWS:SourceArn',
-                    values: [arn],
-                },
-            ],
-        }))
+        const policyTemplate = pulumi
+            .output(this.identity.arn)
+            .apply((arn) => ({
+                sid: 'AllowSES',
+                principals: [
+                    { type: 'Service', identifiers: ['ses.amazonaws.com'] },
+                ],
+                actions: ['sns:Publish'],
+                conditions: [
+                    {
+                        test: 'StringEquals',
+                        variable: 'AWS:SourceAccount',
+                        values: [accountNumber],
+                    },
+                    {
+                        test: 'StringEquals',
+                        variable: 'AWS:SourceArn',
+                        values: [arn],
+                    },
+                ],
+            }))
 
         this.bounceTopic = new aws.sns.Topic(
             `${name.replace(/\./g, '-')}-bounce`,
@@ -218,7 +225,7 @@ export class MailServer extends pulumi.ComponentResource {
         new aws.ses.IdentityNotificationTopic(
             `${name.replace(/\./g, '-')}-bounce`,
             {
-                identity: ses.arn,
+                identity: this.identity.arn,
                 notificationType: 'Bounce',
                 topicArn: this.bounceTopic.arn,
             },
@@ -228,7 +235,7 @@ export class MailServer extends pulumi.ComponentResource {
         new aws.ses.IdentityNotificationTopic(
             `${name.replace(/\./g, '-')}-complaint`,
             {
-                identity: ses.arn,
+                identity: this.identity.arn,
                 notificationType: 'Complaint',
                 topicArn: this.complaintTopic.arn,
             },
