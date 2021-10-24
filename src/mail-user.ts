@@ -54,16 +54,6 @@ export class MailUser extends pulumi.ComponentResource {
             { parent: this },
         )
 
-        const privateKey = pulumi.all([privKey, passphrase]).apply(
-            async ([base64BinaryKey, passphrase]) =>
-                await openpgp.decryptKey({
-                    privateKey: await openpgp.readPrivateKey({
-                        binaryKey: Buffer.from(base64BinaryKey, 'base64'),
-                    }),
-                    passphrase,
-                }),
-        )
-
         const accessKey = new aws.iam.AccessKey(
             name,
             {
