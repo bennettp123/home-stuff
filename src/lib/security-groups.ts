@@ -1,7 +1,7 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as ipAddress from 'ip-address'
-import { getTags } from './helpers'
+import { getTags } from '../helpers'
 
 export const homeIPv6s = [
     '2404:bf40:e402::/48', // gabo rd

@@ -1,6 +1,6 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
-import { getTags } from './helpers'
+import { getTags } from '../helpers'
 
 export class Cluster extends pulumi.ComponentResource {
     arn: pulumi.Output<string>

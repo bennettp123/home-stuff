@@ -2,7 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as awsx from '@pulumi/awsx'
 import * as docker from '@pulumi/docker'
 import * as pulumi from '@pulumi/pulumi'
-import { getTags } from './helpers'
+import { getTags } from '../helpers'
 
 export class Homebridge extends pulumi.ComponentResource {
     constructor(

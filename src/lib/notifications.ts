@@ -1,7 +1,7 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
-import { getTags } from './helpers'
+import { getTags } from '../helpers'
 
 const config = new pulumi.Config('common')
 const accountNumber = config.require<string>('aws-account-number')

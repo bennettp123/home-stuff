@@ -9,7 +9,7 @@ import {
     makeCloudInitUserdata,
     prependCmds,
     SshHostKeys,
-} from './helpers'
+} from '../helpers'
 
 /*
 
