@@ -15,6 +15,7 @@ import { SecurityGroups } from './lib/security-groups'
 import { Vpc } from './lib/vpc'
 import { providers } from './providers'
 import './pulumi-state'
+export { homebridge } from './homebridge-stuff'
 
 const config = new pulumi.Config('home-stuff')
 
@@ -298,33 +299,6 @@ export const homeBridge = config.getBoolean('enable-homebridge')
           },
       })
     : undefined
-
-const certbotUser = new aws.iam.User('homebridge-certbot', {
-    forceDestroy: true,
-    tags: getTags(),
-})
-
-new aws.iam.UserPolicy('homebridge-certbot', {
-    user: certbotUser.id,
-    policy: pulumi.output(
-        aws.iam.getPolicyDocument({
-            statements: [
-                {
-                    sid: 'AllowRead',
-                    effect: 'Allow',
-                    actions: ['route53:ListHostedZones', 'route53:GetChange'],
-                    resources: ['*'],
-                },
-                {
-                    sid: 'AllowUpdate',
-                    effect: 'Allow',
-                    actions: ['route53:ChangeResourceRecordSets'],
-                    resources: ['arn:aws:route53:::hostedzone/Z1LNE5PQ9LO13V'],
-                },
-            ],
-        }),
-    ).json,
-})
 
 const deleteme = new aws.iam.User('deleteme-certbot', {
     forceDestroy: true,

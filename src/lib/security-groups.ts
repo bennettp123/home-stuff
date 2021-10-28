@@ -9,10 +9,15 @@ export const homeIPv6s = [
 
 export const trustedPublicIPv6s = homeIPv6s // TODO add the VPC cidr to this
 
-export const trustedPublicIPv4s = [
+export const homePublicIPv4s = [
     '210.10.212.154/32', // gabo rd
+]
+
+export const workPublicIPv4s = [
     '202.41.193.62/32', // herdsman pde
 ]
+
+export const trustedPublicIPv4s = [...homePublicIPv4s, ...workPublicIPv4s]
 
 export const homeIPv4s = [
     '192.168.0.0/18',
