@@ -56,6 +56,28 @@ const homeBridgeBackupsBucket = new aws.s3.Bucket('homebridge-backups', {
             },
         },
     },
+    lifecycleRules: [
+        {
+            id: 'AbortIncompleteMultipartUploads',
+            enabled: true,
+            abortIncompleteMultipartUploadDays: 2,
+        },
+        {
+            id: 'ExpireOldVersions',
+            enabled: true,
+            noncurrentVersionExpiration: {
+                days: 2,
+            },
+        },
+        {
+            id: 'ExpireOldBackups',
+            enabled: true,
+            prefix: '/backups',
+            expiration: {
+                days: 30,
+            },
+        },
+    ],
     tags: getTags(),
 })
 
