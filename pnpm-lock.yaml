@@ -7,16 +7,16 @@ specifiers:
   '@pulumi/pulumi': ^3.13.2
   '@pulumi/random': ^4.2.0
   '@pulumi/tls': ^4.0.0
-  '@types/netmask': ^1.0.30
-  '@types/node': ^16.10.2
+  '@types/netmask': 1.0.30
+  '@types/node': 16.11.10
   ip-address: ^8.1.0
   netmask: ^2.0.2
   openpgp: ^5.0.0
-  prettier: ^2.4.1
+  prettier: 2.4.1
 
 dependencies:
   '@pulumi/aws': 4.22.1
-  '@pulumi/awsx': 0.32.0_c32b4ce194c744fcd6cc5b4dce01c78a
+  '@pulumi/awsx': 0.32.0_92ad40122e2a56ce84d8eb5351ae9b0d
   '@pulumi/docker': 3.1.0
   '@pulumi/pulumi': 3.13.2
   '@pulumi/random': 4.2.0
@@ -27,7 +27,7 @@ dependencies:
 
 devDependencies:
   '@types/netmask': 1.0.30
-  '@types/node': 16.10.2
+  '@types/node': 16.11.10
   prettier: 2.4.1
 
 packages:
@@ -36,7 +36,7 @@ packages:
     resolution: {integrity: sha512-v7+LQFbqZKmd/Tvf5/j1Xlbq6jXL/4d+gUtm2TNX4QiEC3ELWADmGr2dGlUyLl6aKTuYfsN72vAsO5zmavYkEg==}
     engines: {node: ^8.13.0 || >=10.10.0}
     dependencies:
-      '@types/node': 16.10.2
+      '@types/node': 16.11.10
     dev: false
 
   /@logdna/tail-file/2.1.0:
@@ -88,7 +88,7 @@ packages:
     dev: false
 
   /@pulumi/aws/4.22.1:
-    resolution: {integrity: sha512-xAgqoH/PAAN6h6GcwHebERHEXE5fBV/Hy3ShE7J2zXv3qw1bXoXupgVcoB/A7Xflkt2PP1ZuK4y/IjHo2lg5Jg==, tarball: '@pulumi/aws/-/aws-4.22.1.tgz'}
+    resolution: {integrity: sha512-xAgqoH/PAAN6h6GcwHebERHEXE5fBV/Hy3ShE7J2zXv3qw1bXoXupgVcoB/A7Xflkt2PP1ZuK4y/IjHo2lg5Jg==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.13.2
@@ -99,8 +99,8 @@ packages:
       resolve: 1.20.0
     dev: false
 
-  /@pulumi/awsx/0.32.0_c32b4ce194c744fcd6cc5b4dce01c78a:
-    resolution: {integrity: sha512-/BMtbO9X9n5BxZGQQk/R3jQwjUJtlK4xAaWKTMLV/xDvtoGXyUPUZOOig4z3M4+ZQLA/2nBreUNVnppOfab2zw==, tarball: '@pulumi/awsx/-/awsx-0.32.0.tgz'}
+  /@pulumi/awsx/0.32.0_92ad40122e2a56ce84d8eb5351ae9b0d:
+    resolution: {integrity: sha512-/BMtbO9X9n5BxZGQQk/R3jQwjUJtlK4xAaWKTMLV/xDvtoGXyUPUZOOig4z3M4+ZQLA/2nBreUNVnppOfab2zw==}
     peerDependencies:
       '@pulumi/aws': ^4.6.0
       '@pulumi/pulumi': ^3.0.0
@@ -113,7 +113,7 @@ packages:
     dev: false
 
   /@pulumi/docker/3.1.0:
-    resolution: {integrity: sha512-8IQGo+Hj6oxgzP6p4/lhO/GjNDISaIm8YuuecD4W+e0fIt5KfEMKNLLhJD8SD5pSuOBM6EkF5W1kJAQb9CpK0g==, tarball: '@pulumi/docker/-/docker-3.1.0.tgz'}
+    resolution: {integrity: sha512-8IQGo+Hj6oxgzP6p4/lhO/GjNDISaIm8YuuecD4W+e0fIt5KfEMKNLLhJD8SD5pSuOBM6EkF5W1kJAQb9CpK0g==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.13.2
@@ -188,14 +188,14 @@ packages:
     dev: false
 
   /@pulumi/random/4.2.0:
-    resolution: {integrity: sha512-zdkI6AO2W0H4UwYlKLijccBkkylH1XoqXPoZ8l5shKnOAZVa5izmLkIw2wQOT65BAwjvfczZgdNpPng9n7W06w==, tarball: '@pulumi/random/-/random-4.2.0.tgz'}
+    resolution: {integrity: sha512-zdkI6AO2W0H4UwYlKLijccBkkylH1XoqXPoZ8l5shKnOAZVa5izmLkIw2wQOT65BAwjvfczZgdNpPng9n7W06w==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.7.1
     dev: false
 
   /@pulumi/tls/4.0.0:
-    resolution: {integrity: sha512-MwjAASX+HNjQ4fI2gkVR9m1vDqrN6AfTrWE0BynFn/4rq26Y0U57zNqF9QJLzWPR/fxuZCV0Le25hHx9e+OrRA==, tarball: '@pulumi/tls/-/tls-4.0.0.tgz'}
+    resolution: {integrity: sha512-MwjAASX+HNjQ4fI2gkVR9m1vDqrN6AfTrWE0BynFn/4rq26Y0U57zNqF9QJLzWPR/fxuZCV0Le25hHx9e+OrRA==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.9.1
@@ -213,8 +213,8 @@ packages:
     resolution: {integrity: sha512-Kl1xAICLv1Y7/WsNXkPKldRMz3QmXUYMIzr3rMXnIBDy9c4/sYG7V6P6u7Ja3w+uNtNQrRudJduqVoYX/DxfZg==}
     dev: true
 
-  /@types/node/16.10.2:
-    resolution: {integrity: sha512-zCclL4/rx+W5SQTzFs9wyvvyCwoK9QtBpratqz2IYJ3O8Umrn0m3nsTv0wQBk9sRGpvUe9CwPDrQFB10f1FIjQ==}
+  /@types/node/16.11.10:
+    resolution: {integrity: sha512-3aRnHa1KlOEEhJ6+CvyHKK5vE9BcLGjtUpwvqYLRvYNQKMfabu3BwfJaA/SLW8dxe28LsNDjtHwePTuzn3gmOA==}
 
   /argparse/1.0.10:
     resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
@@ -663,7 +663,7 @@ packages:
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
       '@types/long': 4.0.1
-      '@types/node': 16.10.2
+      '@types/node': 16.11.10
       long: 4.0.0
     dev: false
 
