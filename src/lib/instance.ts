@@ -52,9 +52,16 @@ export const users = Object.entries(defaults?.logins ?? [])
 const upgrade = `#!/bin/sh
 set -e
 
-# upgrade the things
-yum makecache -y
-yum upgrade -y
+if which yum >/dev/null 2>&1; then
+  # upgrade the things
+  yum makecache -y
+  yum upgrade -y
+fi
+
+if which apt-get >/dev/null 2>&1; then
+  apt-get update
+  apt-get dist-upgrade -y
+fi
 `
 
 const upgradeAndReboot = `${upgrade}
@@ -62,6 +69,12 @@ const upgradeAndReboot = `${upgrade}
 if which needs-restarting >/dev/null 2>&1; then
   cloud-init status --wait --long
   needs-restarting -r || shutdown -r now
+
+# needs-restarting is provided by yum-utils,
+# ubuntu uses /var/run/reboot-required
+elif [ -f /var/run/reboot-required ]; then
+  cloud-init status --wait --long
+  shutdown -r now
 fi
 `
 
