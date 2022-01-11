@@ -510,7 +510,10 @@ export class Instance extends pulumi.ComponentResource {
                           instanceType: args.instanceType,
                           ami:
                               args.amiId ??
-                              getAmazonLinux2AmiId({ arch }, { parent: this }),
+                              getAmazonLinux2022AmiId(
+                                  { arch },
+                                  { parent: this },
+                              ),
                           ...(args.instanceRoleId
                               ? {
                                     iamInstanceProfile:
@@ -814,6 +817,34 @@ export function getAmazonLinux2AmiId(
                 .catch((reason) => {
                     pulumi.log.error(
                         `Error getting Amazon Linux 2 AMI ID: ${reason}`,
+                    )
+                    throw reason
+                }),
+    )
+}
+
+// https://docs.aws.amazon.com/linux/al2022/ug/get-started.html
+export function getAmazonLinux2022AmiId(
+    args: {
+        arch: Arch | pulumi.Input<Arch>
+    },
+    opts?: pulumi.InvokeOptions,
+): pulumi.Output<string> {
+    return pulumi.output(args?.arch).apply(
+        async (arch) =>
+            await aws.ssm
+                .getParameter(
+                    {
+                        name: `/aws/service/ami-amazon-linux-latest/al2022-ami-minimal-kernel-5.10-${
+                            arch === 'amd64' ? 'x86_64' : arch
+                        }`,
+                    },
+                    { ...opts, async: true },
+                )
+                .then((result) => result.value)
+                .catch((reason) => {
+                    pulumi.log.error(
+                        `Error getting Amazon Linux 2022 AMI ID: ${reason}`,
                     )
                     throw reason
                 }),
