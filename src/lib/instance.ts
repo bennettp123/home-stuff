@@ -93,10 +93,21 @@ const upgradeScriptPath = '/etc/cron.hourly/automatic-upgrades'
  */
 export const userData = {
     repo_upgrade: 'all',
-    packages: ['jq', 'bind-utils', 'yum-utils'],
+    packages: ['jq', 'bind-utils', 'traceroute', 'yum-utils'],
     ssh_deletekeys: true,
     ...(users.length > 0 ? { users } : {}),
     repo_update: true,
+    yum_repos: {
+        epel: {
+            name: 'Extra Packages for Enterprise Linux 7 - $basearch',
+            mirrorlist:
+                'https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch&infra=$infra&content=$contentdir',
+            failovermethod: 'priority',
+            enabled: true,
+            gpgcheck: true,
+            gpgkey: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7',
+        },
+    },
     ssh: {
         emit_keys_to_console: false,
     },
@@ -499,10 +510,7 @@ export class Instance extends pulumi.ComponentResource {
                           instanceType: args.instanceType,
                           ami:
                               args.amiId ??
-                              getAmazonLinux2022AmiId(
-                                  { arch },
-                                  { parent: this },
-                              ),
+                              getAmazonLinux2AmiId({ arch }, { parent: this }),
                           ...(args.instanceRoleId
                               ? {
                                     iamInstanceProfile:
@@ -577,7 +585,7 @@ export class Instance extends pulumi.ComponentResource {
                           ),
                           rootBlockDevice: {
                               deleteOnTermination: true,
-                              volumeSize: args.rootVolumeSize ?? 6,
+                              volumeSize: args.rootVolumeSize ?? 4,
                               volumeType: 'gp3',
                               encrypted: true,
                               kmsKeyId,
