@@ -588,7 +588,7 @@ export class Instance extends pulumi.ComponentResource {
                           ),
                           rootBlockDevice: {
                               deleteOnTermination: true,
-                              volumeSize: args.rootVolumeSize ?? 6,
+                              volumeSize: args.rootVolumeSize ?? 4,
                               volumeType: 'gp3',
                               encrypted: true,
                               kmsKeyId,
