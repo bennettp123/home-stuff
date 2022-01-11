@@ -8,7 +8,7 @@ specifiers:
   '@pulumi/random': ^4.2.0
   '@pulumi/tls': ^4.0.0
   '@types/netmask': 1.0.30
-  '@types/node': 16.11.10
+  '@types/node': 16.11.19
   ip-address: ^8.1.0
   netmask: ^2.0.2
   openpgp: ^5.0.0
@@ -27,7 +27,7 @@ dependencies:
 
 devDependencies:
   '@types/netmask': 1.0.30
-  '@types/node': 16.11.10
+  '@types/node': 16.11.19
   prettier: 2.5.1
 
 packages:
@@ -36,7 +36,7 @@ packages:
     resolution: {integrity: sha512-v7+LQFbqZKmd/Tvf5/j1Xlbq6jXL/4d+gUtm2TNX4QiEC3ELWADmGr2dGlUyLl6aKTuYfsN72vAsO5zmavYkEg==}
     engines: {node: ^8.13.0 || >=10.10.0}
     dependencies:
-      '@types/node': 16.11.10
+      '@types/node': 16.11.19
     dev: false
 
   /@logdna/tail-file/2.1.0:
@@ -213,8 +213,8 @@ packages:
     resolution: {integrity: sha512-Kl1xAICLv1Y7/WsNXkPKldRMz3QmXUYMIzr3rMXnIBDy9c4/sYG7V6P6u7Ja3w+uNtNQrRudJduqVoYX/DxfZg==}
     dev: true
 
-  /@types/node/16.11.10:
-    resolution: {integrity: sha512-3aRnHa1KlOEEhJ6+CvyHKK5vE9BcLGjtUpwvqYLRvYNQKMfabu3BwfJaA/SLW8dxe28LsNDjtHwePTuzn3gmOA==}
+  /@types/node/16.11.19:
+    resolution: {integrity: sha512-BPAcfDPoHlRQNKktbsbnpACGdypPFBuX4xQlsWDE7B8XXcfII+SpOLay3/qZmCLb39kV5S1RTYwXdkx2lwLYng==}
 
   /argparse/1.0.10:
     resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
@@ -663,7 +663,7 @@ packages:
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
       '@types/long': 4.0.1
-      '@types/node': 16.11.10
+      '@types/node': 16.11.19
       long: 4.0.0
     dev: false
 
