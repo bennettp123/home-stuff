@@ -65,11 +65,6 @@ fi
 `
 
 const upgradeAndReboot = `${upgrade}
-if which yum >/dev/null 2>&1; then
-  # yum-utils provides needs-restarting
-  yum install -y yum-utils
-fi
-
 # reboot if needed
 if which needs-restarting >/dev/null 2>&1; then
   cloud-init status --wait --long
@@ -98,21 +93,10 @@ const upgradeScriptPath = '/etc/cron.hourly/automatic-upgrades'
  */
 export const userData = {
     repo_upgrade: 'all',
-    packages: ['jq', 'bind-utils', 'traceroute', 'yum-utils'],
+    packages: ['jq', 'bind-utils', 'yum-utils'],
     ssh_deletekeys: true,
     ...(users.length > 0 ? { users } : {}),
     repo_update: true,
-    yum_repos: {
-        epel: {
-            name: 'Extra Packages for Enterprise Linux 7 - $basearch',
-            mirrorlist:
-                'https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch&infra=$infra&content=$contentdir',
-            failovermethod: 'priority',
-            enabled: true,
-            gpgcheck: true,
-            gpgkey: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7',
-        },
-    },
     ssh: {
         emit_keys_to_console: false,
     },
