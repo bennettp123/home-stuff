@@ -510,10 +510,7 @@ export class Instance extends pulumi.ComponentResource {
                           instanceType: args.instanceType,
                           ami:
                               args.amiId ??
-                              getAmazonLinux2022AmiId(
-                                  { arch },
-                                  { parent: this },
-                              ),
+                              getAmazonLinux2AmiId({ arch }, { parent: this }),
                           ...(args.instanceRoleId
                               ? {
                                     iamInstanceProfile:
