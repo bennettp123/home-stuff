@@ -65,11 +65,6 @@ fi
 `
 
 const upgradeAndReboot = `${upgrade}
-if which yum >/dev/null 2>&1; then
-  # yum-utils provides needs-restarting
-  yum install -y yum-utils
-fi
-
 # reboot if needed
 if which needs-restarting >/dev/null 2>&1; then
   cloud-init status --wait --long
