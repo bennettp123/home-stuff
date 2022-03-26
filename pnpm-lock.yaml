@@ -12,7 +12,7 @@ specifiers:
   ip-address: ^8.1.0
   netmask: ^2.0.2
   openpgp: ^5.0.0
-  prettier: 2.5.1
+  prettier: 2.6.1
 
 dependencies:
   '@pulumi/aws': 4.22.1
@@ -28,7 +28,7 @@ dependencies:
 devDependencies:
   '@types/netmask': 1.0.30
   '@types/node': 16.11.19
-  prettier: 2.5.1
+  prettier: 2.6.1
 
 packages:
 
@@ -641,8 +641,8 @@ packages:
     resolution: {integrity: sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==}
     dev: false
 
-  /prettier/2.5.1:
-    resolution: {integrity: sha512-vBZcPRUR5MZJwoyi3ZoyQlc1rXeEck8KgeC9AwwOn+exuxLxq5toTRDTSaVrXHxelDMHy9zlicw8u66yxoSUFg==}
+  /prettier/2.6.1:
+    resolution: {integrity: sha512-8UVbTBYGwN37Bs9LERmxCPjdvPxlEowx2urIL6urHzdb3SDq4B/Z6xLFCblrSnE4iKWcS6ziJ3aOYrc1kz/E2A==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     dev: true
