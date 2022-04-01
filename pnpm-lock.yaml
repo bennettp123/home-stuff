@@ -1,7 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
-  '@pulumi/aws': ^4.22.1
+  '@pulumi/aws': ^5.0.0
   '@pulumi/awsx': ^0.40.0
   '@pulumi/docker': ^3.1.0
   '@pulumi/pulumi': ^3.13.2
@@ -15,8 +15,8 @@ specifiers:
   prettier: 2.6.1
 
 dependencies:
-  '@pulumi/aws': 4.22.1
-  '@pulumi/awsx': 0.40.0_92ad40122e2a56ce84d8eb5351ae9b0d
+  '@pulumi/aws': 5.1.0
+  '@pulumi/awsx': 0.40.0_93fc153a57740d70dee309cfe5760c67
   '@pulumi/docker': 3.1.0
   '@pulumi/pulumi': 3.13.2
   '@pulumi/random': 4.2.0
@@ -87,8 +87,8 @@ packages:
     resolution: {integrity: sha1-p3c2C1s5oaLlEG+OhY8v0tBgxXA=}
     dev: false
 
-  /@pulumi/aws/4.22.1:
-    resolution: {integrity: sha512-xAgqoH/PAAN6h6GcwHebERHEXE5fBV/Hy3ShE7J2zXv3qw1bXoXupgVcoB/A7Xflkt2PP1ZuK4y/IjHo2lg5Jg==}
+  /@pulumi/aws/5.1.0:
+    resolution: {integrity: sha512-cQyrUUKBRc4KpS5AOIZsHcaaqO2aYfQ2BiAISTQadKv9b/Pmaj48BjLOywmUSzZrQfNcjK0xTXIhj0VvICHHZw==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.13.2
@@ -99,13 +99,13 @@ packages:
       resolve: 1.20.0
     dev: false
 
-  /@pulumi/awsx/0.40.0_92ad40122e2a56ce84d8eb5351ae9b0d:
+  /@pulumi/awsx/0.40.0_93fc153a57740d70dee309cfe5760c67:
     resolution: {integrity: sha512-4xMmVOHT/PZQsqPAPWe1cYguUCdk0ZUJ1JN7wfYUoGy1I3LR7gxPD14IK5I79o20PmZI65BRlAwNuntByVy6xw==}
     peerDependencies:
       '@pulumi/aws': ^5.0.0
       '@pulumi/pulumi': ^3.0.0
     dependencies:
-      '@pulumi/aws': 4.22.1
+      '@pulumi/aws': 5.1.0
       '@pulumi/docker': 3.1.0
       '@pulumi/pulumi': 3.13.2
       '@types/aws-lambda': 8.10.79
@@ -688,6 +688,7 @@ packages:
 
   /read-package-tree/5.3.1:
     resolution: {integrity: sha512-mLUDsD5JVtlZxjSlPPx1RETkNjjvQYuweKwNVt1Sn8kP5Jh44pvYuUHCp6xSVDZWbNxVxG5lyZJ921aJH61sTw==}
+    deprecated: The functionality that this package provided is now in @npmcli/arborist
     dependencies:
       read-package-json: 2.1.2
       readdir-scoped-modules: 1.1.0

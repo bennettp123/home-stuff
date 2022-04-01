@@ -7,7 +7,7 @@
         "prettier": "2.6.1"
     },
     "dependencies": {
-        "@pulumi/aws": "^4.22.1",
+        "@pulumi/aws": "^5.0.0",
         "@pulumi/awsx": "^0.40.0",
         "@pulumi/docker": "^3.1.0",
         "@pulumi/pulumi": "^3.13.2",
