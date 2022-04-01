@@ -9,6 +9,8 @@ export const homeIPv6s = [
 
 export const trustedPublicIPv6s = homeIPv6s // TODO add the VPC cidr to this
 
+export const allowSshFromIpv6 = [...trustedPublicIPv6s]
+
 export const homePublicIPv4s = [
     '210.10.212.154/32', // gabo rd
 ]
@@ -18,6 +20,11 @@ export const workPublicIPv4s = [
 ]
 
 export const trustedPublicIPv4s = [...homePublicIPv4s, ...workPublicIPv4s]
+
+export const allowSshFromIpv4 = [
+    '49.196.54.77/32', // optus mobile; delete me
+    ...trustedPublicIPv4s,
+]
 
 export const homeIPv4s = [
     '192.168.0.0/18',
@@ -450,14 +457,14 @@ export class SecurityGroups extends pulumi.ComponentResource {
                 vpcId: vpc.id,
                 ingress: [
                     {
-                        ipv6CidrBlocks: trustedPublicIPv6s,
+                        ipv6CidrBlocks: allowSshFromIpv6,
                         description: 'allow inbound SSH from trusted sources',
                         protocol: 'tcp',
                         fromPort: 22,
                         toPort: 22,
                     },
                     {
-                        cidrBlocks: trustedPublicIPv4s,
+                        cidrBlocks: allowSshFromIpv4,
                         description: 'allow inbound SSH from trusted sources',
                         protocol: 'tcp',
                         fromPort: 22,
