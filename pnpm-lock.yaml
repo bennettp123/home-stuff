@@ -2,7 +2,7 @@ lockfileVersion: 5.3
 
 specifiers:
   '@pulumi/aws': ^4.22.1
-  '@pulumi/awsx': ^0.32.0
+  '@pulumi/awsx': ^0.40.0
   '@pulumi/docker': ^3.1.0
   '@pulumi/pulumi': ^3.13.2
   '@pulumi/random': ^4.2.0
@@ -16,7 +16,7 @@ specifiers:
 
 dependencies:
   '@pulumi/aws': 4.22.1
-  '@pulumi/awsx': 0.32.0_92ad40122e2a56ce84d8eb5351ae9b0d
+  '@pulumi/awsx': 0.40.0_92ad40122e2a56ce84d8eb5351ae9b0d
   '@pulumi/docker': 3.1.0
   '@pulumi/pulumi': 3.13.2
   '@pulumi/random': 4.2.0
@@ -99,10 +99,10 @@ packages:
       resolve: 1.20.0
     dev: false
 
-  /@pulumi/awsx/0.32.0_92ad40122e2a56ce84d8eb5351ae9b0d:
-    resolution: {integrity: sha512-/BMtbO9X9n5BxZGQQk/R3jQwjUJtlK4xAaWKTMLV/xDvtoGXyUPUZOOig4z3M4+ZQLA/2nBreUNVnppOfab2zw==}
+  /@pulumi/awsx/0.40.0_92ad40122e2a56ce84d8eb5351ae9b0d:
+    resolution: {integrity: sha512-4xMmVOHT/PZQsqPAPWe1cYguUCdk0ZUJ1JN7wfYUoGy1I3LR7gxPD14IK5I79o20PmZI65BRlAwNuntByVy6xw==}
     peerDependencies:
-      '@pulumi/aws': ^4.6.0
+      '@pulumi/aws': ^5.0.0
       '@pulumi/pulumi': ^3.0.0
     dependencies:
       '@pulumi/aws': 4.22.1

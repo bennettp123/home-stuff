@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "@pulumi/aws": "^4.22.1",
-        "@pulumi/awsx": "^0.32.0",
+        "@pulumi/awsx": "^0.40.0",
         "@pulumi/docker": "^3.1.0",
         "@pulumi/pulumi": "^3.13.2",
         "@pulumi/random": "^4.2.0",
