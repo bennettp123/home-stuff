@@ -41,6 +41,7 @@ export class DefaultRoutes extends pulumi.ComponentResource {
                         '192.168.0.0/18',
                         '192.168.128.0/18',
                         '192.168.192.0/18',
+                        '172.24.0.0/16',
                     ].forEach((destinationCidrBlock, idx) =>
                         subnet.createRoute(
                             `home-${idx}`,
