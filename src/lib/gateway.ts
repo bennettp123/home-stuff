@@ -233,9 +233,11 @@ export class Gateway extends pulumi.ComponentResource {
                     ),
                 ],
                 runcmd: [
+                    'set +x',
+                    'exec > /tmp/runcmd-logs 2>&1',
                     ...defaultUserData.runcmd,
-                    'systemctl enable openvpn@server',
-                    'systemctl start openvpn@server',
+                    'systemctl enable "openvpn@server"',
+                    'systemctl start "openvpn@server"',
                 ],
             }))
 
