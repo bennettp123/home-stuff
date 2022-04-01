@@ -46,7 +46,7 @@ export class DefaultRoutes extends pulumi.ComponentResource {
                         '52.63.148.231/32', // perthnow bastion
                         '13.55.57.151/32', // branch-deploys bastion
                         '54.79.218.38/32', // thewest bastion
-                        '3.104.86.9', // sevennews bastion
+                        '3.104.86.9/32', // sevennews bastion
                     ].forEach((destinationCidrBlock, idx) =>
                         subnet.createRoute(
                             `home-${idx}`,
