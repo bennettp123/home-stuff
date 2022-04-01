@@ -41,7 +41,6 @@ export class DefaultRoutes extends pulumi.ComponentResource {
                         '192.168.0.0/18',
                         '192.168.128.0/18',
                         '192.168.192.0/18',
-                        '172.24.0.0/16',
                         '13.238.72.35/32', // jumpbox.cue-sandbox.swm.com.au
                         '54.252.158.21/32', // bastion.swmdigital.io
                         '52.63.148.231/32', // perthnow bastion
