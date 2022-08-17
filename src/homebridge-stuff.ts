@@ -47,38 +47,54 @@ const homeBridgeBackupUser = new IamUser('homebridge-backups', {
     tags: getTags(),
 })
 
-const homeBridgeBackupsBucket = new aws.s3.Bucket('homebridge-backups', {
-    acl: 'private',
-    serverSideEncryptionConfiguration: {
-        rule: {
-            applyServerSideEncryptionByDefault: {
-                sseAlgorithm: 'AES256',
-            },
-        },
-    },
-    lifecycleRules: [
+const homeBridgeBackupsBucket = new aws.s3.BucketV2('homebridge-backups', {
+    tags: getTags(),
+})
+
+new aws.s3.BucketLifecycleConfigurationV2('homebridge-backups', {
+    bucket: homeBridgeBackupsBucket.bucket,
+    rules: [
         {
             id: 'AbortIncompleteMultipartUploads',
-            enabled: true,
-            abortIncompleteMultipartUploadDays: 2,
+            status: 'Enabled',
+            abortIncompleteMultipartUpload: {
+                daysAfterInitiation: 2,
+            },
         },
         {
             id: 'ExpireOldVersions',
-            enabled: true,
+            status: 'Enabled',
             noncurrentVersionExpiration: {
-                days: 2,
+                noncurrentDays: 2,
             },
         },
         {
             id: 'ExpireOldBackups',
-            enabled: true,
-            prefix: '/backups',
+            status: 'Enabled',
+            filter: {
+                prefix: '/backups',
+            },
             expiration: {
                 days: 30,
             },
         },
     ],
-    tags: getTags(),
+})
+
+new aws.s3.BucketAclV2('homebridge-backups', {
+    bucket: homeBridgeBackupsBucket.bucket,
+    acl: 'private',
+})
+
+new aws.s3.BucketServerSideEncryptionConfigurationV2('homebridge-backups', {
+    bucket: homeBridgeBackupsBucket.bucket,
+    rules: [
+        {
+            applyServerSideEncryptionByDefault: {
+                sseAlgorithm: 'AES256',
+            },
+        },
+    ],
 })
 
 new aws.s3.BucketPolicy('homebridge-backups', {
