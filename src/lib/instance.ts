@@ -497,6 +497,14 @@ export class Instance extends pulumi.ComponentResource {
                 return unwantedFiles
             })
 
+        const imageId =
+            args.amiId ?? getAmazonLinux2AmiId({ arch }, { parent: this })
+
+        const ami = aws.ec2.Ami.get('selected', imageId, {}, { parent: this })
+        const deviceName = ami.ebsBlockDevices.apply(
+            (devices) => devices[0]?.deviceName ?? '/dev/xvda',
+        )
+
         const launchTemplate = new aws.ec2.LaunchTemplate(
             `${name}-template`,
             {
@@ -511,9 +519,7 @@ export class Instance extends pulumi.ComponentResource {
                         spotInstanceType: 'persistent',
                     },
                 },
-                imageId:
-                    args.amiId ??
-                    getAmazonLinux2AmiId({ arch }, { parent: this }),
+                imageId,
                 ...(args.instanceRoleId
                     ? {
                           iamInstanceProfile: {
@@ -598,7 +604,7 @@ export class Instance extends pulumi.ComponentResource {
                 ).apply((str) => Buffer.from(str).toString('base64')),
                 blockDeviceMappings: [
                     {
-                        deviceName: '/dev/sda1',
+                        deviceName,
                         ebs: {
                             deleteOnTermination: 'true',
                             volumeSize: args.rootVolumeSize ?? 4,
