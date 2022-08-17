@@ -669,9 +669,6 @@ export class Instance extends pulumi.ComponentResource {
                       },
                       {
                           parent: this,
-                          ignoreChanges: [
-                              'tags', // specified in the LaunchTemplate
-                          ],
                           replaceOnChanges: [...(nic ? [] : ['privateIp'])],
                           ...(nic ? { dependsOn: [nic] } : {}),
                           deleteBeforeReplace: true,
