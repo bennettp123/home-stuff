@@ -323,8 +323,6 @@ export class Instance extends pulumi.ComponentResource {
               )
             : undefined
 
-        const tenyears = 10 * 365 * 24 * 60 * 60 * 1000
-
         const ipSuffix = args.network?.fixedPrivateIp
             ? new random.RandomInteger(
                   `${name}-private-ip-suffix`,
@@ -393,21 +391,6 @@ export class Instance extends pulumi.ComponentResource {
                   })
             : undefined
 
-        const networkSettings: Partial<aws.ec2.SpotInstanceRequestArgs> &
-            aws.ec2.NetworkInterfaceArgs = {
-            subnetId: pulumi.output(args.subnetIds).apply((ids) => ids[0]),
-            ...(args.network?.sourceDestCheck !== undefined
-                ? {
-                      sourceDestCheck: args.network?.sourceDestCheck,
-                  }
-                : {}),
-            ...(args.network?.useENI
-                ? { securityGroups: args.securityGroupIds }
-                : { vpcSecurityGroupIds: args.securityGroupIds }),
-            ...(privateIp ? { privateIps: [privateIp] } : {}),
-            ...(privateIpv6 ? { ipv6Addresses: [privateIpv6] } : {}),
-        }
-
         // create the nic explicitly here
         //   - SpotInstanceRequest doesn't do sourceDestCheck properly
         //   - routes persist after instance recreation
@@ -416,7 +399,20 @@ export class Instance extends pulumi.ComponentResource {
                 ? new aws.ec2.NetworkInterface(
                       `${name}-interface`,
                       {
-                          ...networkSettings,
+                          subnetId: pulumi
+                              .output(args.subnetIds)
+                              .apply((ids) => ids[0]),
+                          ...(args.network?.sourceDestCheck !== undefined
+                              ? {
+                                    sourceDestCheck:
+                                        args.network?.sourceDestCheck,
+                                }
+                              : {}),
+                          securityGroups: args.securityGroupIds,
+                          ...(privateIp ? { privateIps: [privateIp] } : {}),
+                          ...(privateIpv6
+                              ? { ipv6Addresses: [privateIpv6] }
+                              : {}),
                           tags: getTags({ Name: `${name}-interface` }),
                       },
                       {
@@ -501,126 +497,172 @@ export class Instance extends pulumi.ComponentResource {
                 return unwantedFiles
             })
 
+        const launchTemplate = new aws.ec2.LaunchTemplate(
+            `${name}-template`,
+            {
+                instanceType: args.instanceType,
+                instanceMarketOptions: {
+                    marketType: 'spot',
+                    spotOptions: {
+                        instanceInterruptionBehavior: 'stop',
+                        // if the spot request is interrupted, then persistent
+                        // ensures the instance is re-launched.
+                        spotInstanceType: 'persistent',
+                    },
+                },
+                imageId:
+                    args.amiId ??
+                    getAmazonLinux2AmiId({ arch }, { parent: this }),
+                ...(args.instanceRoleId
+                    ? {
+                          iamInstanceProfile: {
+                              arn: new aws.iam.InstanceProfile(
+                                  `${name}-instance-profile`,
+                                  {
+                                      role: args.instanceRoleId,
+                                  },
+                              ).arn,
+                          },
+                      }
+                    : {}),
+                networkInterfaces: [
+                    {
+                        ...(nic
+                            ? {
+                                  deviceIndex: 0,
+                                  networkInterfaceId: nic.id,
+                              }
+                            : {
+                                  subnetId: pulumi
+                                      .output(args.subnetIds)
+                                      .apply((ids) => ids[0]),
+                                  ...(args.network?.sourceDestCheck
+                                      ? (() => {
+                                            throw new pulumi.ResourceError(
+                                                'Error: sourceDeskCheck requires useENI',
+                                                this,
+                                            )
+                                        })()
+                                      : {}),
+                                  securityGroups: args.securityGroupIds,
+                                  ...(privateIp
+                                      ? { ipv4Addresses: [privateIp] }
+                                      : {}),
+                                  ...(privateIpv6
+                                      ? { ipv6Addresses: [privateIpv6] }
+                                      : {}),
+                              }),
+                    },
+                ],
+                keyName: 'bennett@MacBook Pro 16',
+                userData: makeCloudInitUserdata(
+                    prependCmds(
+                        addHostKeys(
+                            pulumi
+                                .output(args.userData)
+                                .apply((argsUserData) => ({
+                                    ...userData,
+                                    ...(argsUserData ?? {}),
+                                    write_files:
+                                        args.rebootForKernelUpdates ?? true
+                                            ? // reboot is enabled by default
+                                              [
+                                                  ...userData.write_files,
+                                                  ...((argsUserData ?? {})
+                                                      .write_files ?? []),
+                                              ]
+                                            : // otherwise, disable reboot
+                                              [
+                                                  ...userData.write_files.map(
+                                                      (file) => ({
+                                                          ...file,
+                                                          content:
+                                                              file.path ===
+                                                              upgradeScriptPath
+                                                                  ? upgrade
+                                                                  : file.content,
+                                                      }),
+                                                  ),
+                                                  ...((argsUserData ?? {})
+                                                      .write_files ?? []),
+                                              ],
+                                })),
+                            sshHostKeys ?? {},
+                        ),
+                        deleteUnwantedKeys.apply((files) => [
+                            ...files.map((file) => `rm -f '${file}' || true`),
+                            'systemctl reload sshd',
+                        ]),
+                    ),
+                ).apply((str) => Buffer.from(str).toString('base64')),
+                blockDeviceMappings: [
+                    {
+                        deviceName: '/dev/sda1',
+                        ebs: {
+                            deleteOnTermination: 'true',
+                            volumeSize: args.rootVolumeSize ?? 4,
+                            volumeType: 'gp3',
+                            encrypted: 'true',
+                            kmsKeyId,
+                        },
+                    },
+                ],
+                instanceInitiatedShutdownBehavior: 'stop',
+                creditSpecification: {
+                    cpuCredits: 'standard',
+                },
+                disableApiTermination: true,
+                tagSpecifications: [
+                    {
+                        resourceType: 'instance',
+                        tags: getTags({ Name: `${name}-instance` }),
+                    },
+                    {
+                        resourceType: 'volume',
+                        tags: getTags({
+                            Name: `${name}-instance`,
+                            InstanceName: `${name}-instance`,
+                        }),
+                    },
+                    ...(nic
+                        ? []
+                        : [
+                              {
+                                  resourceType: 'network-interface',
+                                  tags: getTags({
+                                      Name: `${name}-instance`,
+                                      InstanceName: `${name}-instance`,
+                                  }),
+                              },
+                          ]),
+                    {
+                        resourceType: 'spot-instances-request',
+                        tags: getTags({
+                            Name: `${name}-instance`,
+                            InstanceName: `${name}-instance`,
+                        }),
+                    },
+                ],
+            },
+            { parent: this },
+        )
+
         const instance =
             args.offline ?? false
                 ? undefined
-                : new aws.ec2.SpotInstanceRequest(
+                : new aws.ec2.Instance(
                       `${name}-instance`,
                       {
-                          instanceType: args.instanceType,
-                          ami:
-                              args.amiId ??
-                              getAmazonLinux2AmiId({ arch }, { parent: this }),
-                          ...(args.instanceRoleId
-                              ? {
-                                    iamInstanceProfile:
-                                        new aws.iam.InstanceProfile(
-                                            `${name}-instance-profile`,
-                                            {
-                                                role: args.instanceRoleId,
-                                            },
-                                        ).id,
-                                }
-                              : {}),
-                          ...(nic
-                              ? {
-                                    networkInterfaces: [
-                                        {
-                                            deviceIndex: 0,
-                                            networkInterfaceId: nic.id,
-                                            deleteOnTermination: false, // pulumi will delete it for us
-                                        },
-                                    ],
-                                }
-                              : networkSettings),
-                          keyName: 'bennett@MacBook Pro 16',
-                          userData: makeCloudInitUserdata(
-                              prependCmds(
-                                  addHostKeys(
-                                      pulumi
-                                          .output(args.userData)
-                                          .apply((argsUserData) => ({
-                                              ...userData,
-                                              ...(argsUserData ?? {}),
-                                              write_files:
-                                                  args.rebootForKernelUpdates ??
-                                                  true
-                                                      ? // reboot is enabled by default
-                                                        [
-                                                            ...userData.write_files,
-                                                            ...((
-                                                                argsUserData ??
-                                                                {}
-                                                            ).write_files ??
-                                                                []),
-                                                        ]
-                                                      : // otherwise, disable reboot
-                                                        [
-                                                            ...userData.write_files.map(
-                                                                (file) => ({
-                                                                    ...file,
-                                                                    content:
-                                                                        file.path ===
-                                                                        upgradeScriptPath
-                                                                            ? upgrade
-                                                                            : file.content,
-                                                                }),
-                                                            ),
-                                                            ...((
-                                                                argsUserData ??
-                                                                {}
-                                                            ).write_files ??
-                                                                []),
-                                                        ],
-                                          })),
-                                      sshHostKeys ?? {},
-                                  ),
-                                  deleteUnwantedKeys.apply((files) => [
-                                      ...files.map(
-                                          (file) => `rm -f '${file}' || true`,
-                                      ),
-                                      'systemctl reload sshd',
-                                  ]),
+                          launchTemplate: {
+                              id: launchTemplate.id,
+                              version: launchTemplate.latestVersion.apply(
+                                  (version) => version.toString(),
                               ),
-                          ),
-                          rootBlockDevice: {
-                              deleteOnTermination: true,
-                              volumeSize: args.rootVolumeSize ?? 4,
-                              volumeType: 'gp3',
-                              encrypted: true,
-                              kmsKeyId,
                           },
-                          instanceInitiatedShutdownBehavior: 'stop',
-                          spotType: 'persistent',
-                          creditSpecification: {
-                              cpuCredits: 'standard',
-                          },
-                          disableApiTermination: true,
-                          instanceInterruptionBehavior: 'stop',
-                          waitForFulfillment: true,
-                          validUntil: `${
-                              new Date(
-                                  // reset date about every 10 years
-                                  Date.now() +
-                                      tenyears -
-                                      ((Date.now() + tenyears) % tenyears),
-                              )
-                                  .toISOString()
-                                  .replace(/000Z$/, '00Z') // just the last two zeros
-                          }`,
-                          tags: getTags({ Name: `${name}-instance` }),
-                          volumeTags: getTags({
-                              Name: `${name}-instance-root`,
-                              InstanceName: `${name}-instance`,
-                          }),
                       },
                       {
                           parent: this,
-                          ignoreChanges: ['validUntil'],
-                          replaceOnChanges: [
-                              ...(nic ? [] : ['privateIp']),
-                              'tags',
-                          ],
+                          replaceOnChanges: [...(nic ? [] : ['privateIp'])],
                           ...(nic ? { dependsOn: [nic] } : {}),
                           deleteBeforeReplace: true,
                       },
@@ -628,25 +670,10 @@ export class Instance extends pulumi.ComponentResource {
 
         if (instance !== undefined) {
             this.instanceUrn = instance.urn
-
-            // aws.ec2.SpotInstanceRequest doesn't propagate tags to the
-            // instance, but we can do it ourselves!
-            pulumi
-                .all([instance.spotInstanceId, instance.tags])
-                .apply(([instanceId, tags]) =>
-                    Object.entries(tags ?? {}).map(
-                        ([key, value]) =>
-                            new aws.ec2.Tag(`${name}-instance-${key}`, {
-                                resourceId: instanceId,
-                                key,
-                                value,
-                            }),
-                    ),
-                )
         }
 
         this.interfaceId = nic?.id ?? instance?.primaryNetworkInterfaceId
-        this.instanceId = instance?.spotInstanceId
+        this.instanceId = instance?.id
         this.privateIp = nic ? nic.privateIp : instance?.privateIp ?? privateIp
 
         if (eip && instance) {
@@ -655,7 +682,7 @@ export class Instance extends pulumi.ComponentResource {
                 `${name}-eip-assoc`,
                 {
                     publicIp: eip?.publicIp,
-                    instanceId: instance.spotInstanceId,
+                    instanceId: instance.id,
                 },
                 { parent: this },
             )
