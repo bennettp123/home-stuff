@@ -500,6 +500,7 @@ export class Instance extends pulumi.ComponentResource {
         const launchTemplate = new aws.ec2.LaunchTemplate(
             `${name}-template`,
             {
+                updateDefaultVersion: true,
                 instanceType: args.instanceType,
                 instanceMarketOptions: {
                     marketType: 'spot',
@@ -659,9 +660,18 @@ export class Instance extends pulumi.ComponentResource {
                                   (version) => version.toString(),
                               ),
                           },
+                          sourceDestCheck: args.network?.sourceDestCheck,
+                          tags: getTags({ Name: `${name}-instance` }),
+                          volumeTags: getTags({
+                              Name: `${name}-instance`,
+                              InstanceName: `${name}-instance`,
+                          }),
                       },
                       {
                           parent: this,
+                          ignoreChanges: [
+                              'tags', // specified in the LaunchTemplate
+                          ],
                           replaceOnChanges: [...(nic ? [] : ['privateIp'])],
                           ...(nic ? { dependsOn: [nic] } : {}),
                           deleteBeforeReplace: true,
