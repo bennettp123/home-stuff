@@ -37,7 +37,7 @@ config:
     - bennett
   plex:create-s3-bucket: "false"
   plex:instance-type: a1.medium
-  plex:state: online
+  plex:state: offline
   plex:wasabi-bucket: plex-bucket-495b3c2
   plex:wasabi-creds:
     secure: v1:rMP8RD5qc50FUOzN:3J+ef7lxYXOJ32S9CbFMSV/inrOIpIUNF1ALlyJCEfWDTuFEcRwrfx2xw4TO74mdBhRC+NyD9UWOue94D0FQyyUshQ96CDklZbK1MUpKbO4kroxZBPfMMzzPDu1mkxFyaw==

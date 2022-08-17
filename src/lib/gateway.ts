@@ -224,7 +224,6 @@ export class Gateway extends pulumi.ComponentResource {
                     },
                 ],
                 bootcmd: [
-                    ...defaultUserData.bootcmd,
                     'echo 1 > /proc/sys/net/ipv4/ip_forward',
                     'echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp',
                     ...(natCidrs ?? []).map(

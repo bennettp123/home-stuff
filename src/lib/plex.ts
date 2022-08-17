@@ -221,6 +221,7 @@ export class Plex extends pulumi.ComponentResource {
                                 },
                             },
                         },
+                        yum_repos: undefined,
                         packages: [
                             'nvme-cli',
                             's3fs',

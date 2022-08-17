@@ -119,9 +119,7 @@ export const userData = {
             content: upgradeAndReboot,
         },
     ],
-    runcmd: ['systemctl reload crond'],
-    bootcmd: [],
-    cloud_final_modules: [['ssh', 'always']],
+    runcmd: ['systemctl reload crond || systemctl restart cron || :'],
 }
 
 export interface InstanceArgs {
