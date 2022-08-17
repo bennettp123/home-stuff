@@ -313,13 +313,14 @@ export class Instance extends pulumi.ComponentResource {
             })
 
         // an Elastic IP provides a static IP address
-        const eip = args.network?.useEIP
-            ? new aws.ec2.Eip(
-                  `${name}-eip`,
-                  { vpc: true, tags: getTags({ Name: `${name}-eip` }) },
-                  { parent: this },
-              )
-            : undefined
+        const eip =
+            args.network?.useEIP && !args.offline
+                ? new aws.ec2.Eip(
+                      `${name}-eip`,
+                      { vpc: true, tags: getTags({ Name: `${name}-eip` }) },
+                      { parent: this },
+                  )
+                : undefined
 
         const ipSuffix = args.network?.fixedPrivateIp
             ? new random.RandomInteger(
