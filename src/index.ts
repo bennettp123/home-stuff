@@ -1,4 +1,5 @@
 import * as aws from '@pulumi/aws'
+import * as awsNative from '@pulumi/aws-native'
 import * as pulumi from '@pulumi/pulumi'
 import './dns-records'
 import { getTags } from './helpers'
@@ -13,11 +14,89 @@ import { DefaultNotifications, NotificationsTopic } from './lib/notifications'
 import { Plex } from './lib/plex'
 import { SecurityGroups } from './lib/security-groups'
 import { Vpc } from './lib/vpc'
-import { providers } from './providers'
+import { awsNativeProviders, providers } from './providers'
 import './pulumi-state'
 export { homebridge } from './homebridge-stuff'
 
 const config = new pulumi.Config('home-stuff')
+
+const cachePolicy = aws.cloudfront.getCachePolicyOutput(
+    {
+        name: 'Managed-CachingOptimized',
+    },
+    { provider: providers['us-east-1'] },
+)
+
+const requestPolicy = aws.cloudfront.getOriginRequestPolicyOutput(
+    {
+        name: 'Managed-CORS-CustomOrigin',
+    },
+    { provider: providers['us-east-1'] },
+)
+
+const headerPolicy = aws.cloudfront.getResponseHeadersPolicyOutput(
+    {
+        name: 'Managed-SecurityHeadersPolicy',
+    },
+    { provider: providers['us-east-1'] },
+)
+
+export const distro = new awsNative.cloudfront.Distribution(
+    'sample-distro',
+    {
+        distributionConfig: {
+            enabled: true,
+            iPV6Enabled: true,
+            httpVersion: 'http2and3',
+            viewerCertificate: {
+                cloudFrontDefaultCertificate: true,
+                minimumProtocolVersion: 'TLSv1.2_2021',
+            },
+            origins: [
+                {
+                    id: 'default',
+                    domainName: 'example.com',
+                    customOriginConfig: {
+                        hTTPPort: 80,
+                        hTTPSPort: 443,
+                        originProtocolPolicy: 'https-only',
+                        originSSLProtocols: ['TLSv1.2'],
+                    },
+                },
+            ],
+            defaultCacheBehavior: {
+                targetOriginId: 'default',
+                viewerProtocolPolicy: 'redirect-to-https',
+                cachePolicyId: cachePolicy.apply(
+                    (policy) =>
+                        policy.id ??
+                        (() => {
+                            throw new Error('could not get cache policy id')
+                        })(),
+                ),
+                originRequestPolicyId: requestPolicy.apply(
+                    (policy) =>
+                        policy.id ??
+                        (() => {
+                            throw new Error(
+                                'could not get origin request policy id',
+                            )
+                        })(),
+                ),
+                responseHeadersPolicyId: headerPolicy.apply(
+                    (policy) =>
+                        policy.id ??
+                        (() => {
+                            throw new Error(
+                                'could not get response header policy id',
+                            )
+                        })(),
+                ),
+            },
+        },
+    },
+    { provider: awsNativeProviders['us-east-1'] },
+)
 
 const notifications = {
     default: new NotificationsTopic('ap-southeast-2', {
