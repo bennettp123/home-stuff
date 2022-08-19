@@ -1,9 +1,9 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@pulumi/aws': ^5.10.0
+  '@pulumi/aws': ^5.11.0
   '@pulumi/awsx': ^0.40.0
-  '@pulumi/docker': ^3.4.0
+  '@pulumi/docker': ^3.4.1
   '@pulumi/pulumi': ^3.38.0
   '@pulumi/random': ^4.8.1
   '@pulumi/tls': ^4.6.0
@@ -15,9 +15,9 @@ specifiers:
   prettier: 2.7.1
 
 dependencies:
-  '@pulumi/aws': 5.10.0
-  '@pulumi/awsx': 0.40.0_ayddgk46xxjl3mcvednvd6epfu
-  '@pulumi/docker': 3.4.0
+  '@pulumi/aws': 5.11.0
+  '@pulumi/awsx': 0.40.0_65ij342ve5pybyeu252i65op6q
+  '@pulumi/docker': 3.4.1
   '@pulumi/pulumi': 3.38.0
   '@pulumi/random': 4.8.1
   '@pulumi/tls': 4.6.0
@@ -44,8 +44,8 @@ packages:
     engines: {node: '>=10.3.0'}
     dev: false
 
-  /@pulumi/aws/5.10.0:
-    resolution: {integrity: sha512-5z5MTc8mKkVFp0qFceXz4HsoZ9Rs7BPeczmgYsIwhHTWGsuELtgxhzrh/Z51x9xLxgff+oED4BRYs48t67Z9gw==}
+  /@pulumi/aws/5.11.0:
+    resolution: {integrity: sha512-izyEHfNErUV0y1gD/Jqzisbr+MTrimzKr+0tziLEkTWdNiIP2IkTtyPHYL72fRj0fhJ89/TknvegvxI1aTSsXA==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.38.0
@@ -56,21 +56,21 @@ packages:
       resolve: 1.20.0
     dev: false
 
-  /@pulumi/awsx/0.40.0_ayddgk46xxjl3mcvednvd6epfu:
+  /@pulumi/awsx/0.40.0_65ij342ve5pybyeu252i65op6q:
     resolution: {integrity: sha512-4xMmVOHT/PZQsqPAPWe1cYguUCdk0ZUJ1JN7wfYUoGy1I3LR7gxPD14IK5I79o20PmZI65BRlAwNuntByVy6xw==}
     peerDependencies:
       '@pulumi/aws': ^5.0.0
       '@pulumi/pulumi': ^3.0.0
     dependencies:
-      '@pulumi/aws': 5.10.0
-      '@pulumi/docker': 3.4.0
+      '@pulumi/aws': 5.11.0
+      '@pulumi/docker': 3.4.1
       '@pulumi/pulumi': 3.38.0
       '@types/aws-lambda': 8.10.79
       mime: 2.5.2
     dev: false
 
-  /@pulumi/docker/3.4.0:
-    resolution: {integrity: sha512-afoi3HRfX3l4O7o6/ePgzKkIypk0Aa7ykwltRSh8dFN4A6XxEnEeuCcmRWMLZMbyX3Wn8iyc9P8qXFItEXZWUg==}
+  /@pulumi/docker/3.4.1:
+    resolution: {integrity: sha512-SOZ7Cz6JrUnbTbOrwL5tuiGnFq3IIvGQqZnksIoPuJAjEKYB1bsc3EUtrLVLlLYKQAP/vML0YQVY6BWYXoidtg==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.38.0
