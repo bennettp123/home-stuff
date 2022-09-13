@@ -3,7 +3,7 @@
     "main": "src/index.ts",
     "devDependencies": {
         "@types/netmask": "1.0.30",
-        "@types/node": "16.11.49",
+        "@types/node": "16.11.59",
         "prettier": "2.7.1"
     },
     "dependencies": {
