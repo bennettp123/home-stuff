@@ -9,10 +9,7 @@ export const homeIPv6s = [
 
 export const trustedPublicIPv6s = homeIPv6s // TODO add the VPC cidr to this
 
-export const allowSshFromIpv6 = [
-    '2001:8000::/20', // telstra IPv6, because I'm lazy AF
-    ...trustedPublicIPv6s,
-]
+export const allowSshFromIpv6 = [...trustedPublicIPv6s]
 
 export const homePublicIPv4s = [
     '210.10.212.154/32', // gabo rd
