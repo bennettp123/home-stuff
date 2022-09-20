@@ -271,11 +271,16 @@ export class NotificationsTopic extends pulumi.ComponentResource {
 
         const policy = args?.workAroundSomeOldTerraformBug
             ? undefined
-            : new aws.sns.TopicPolicy(`${name}-topic-policy`, {
-                  arn: topic.arn,
-                  policy: topic.arn.apply((topicArn) => makePolicyDoc(topicArn))
-                      .json,
-              })
+            : new aws.sns.TopicPolicy(
+                  `${name}-topic-policy`,
+                  {
+                      arn: topic.arn,
+                      policy: topic.arn.apply((topicArn) =>
+                          makePolicyDoc(topicArn),
+                      ).json,
+                  },
+                  pulumi.mergeOptions(opts, { parent: this }),
+              )
 
         // wait for the policy to exist before exporting the topicArn
         this.topicArn = (policy ?? topic).arn.apply(() => topic.arn)
