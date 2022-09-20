@@ -5,7 +5,7 @@ const config = new pulumi.Config('ssm-automations')
 
 export class SsmAutomations extends pulumi.ComponentResource {
     constructor(name: string, args: {}, opts: pulumi.ComponentResourceOptions) {
-        super('swm:news-mono:SsmAutomations', name, {}, opts)
+        super('bennettp123:SsmAutomations', name, {}, opts)
 
         if (!config.getBoolean('enable-automations')) {
             return
