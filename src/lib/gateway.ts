@@ -1,6 +1,11 @@
+import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import { Netmask } from 'netmask'
 import { Instance, InstanceArgs, userData as defaultUserData } from './instance'
+import {
+    getSsmAgentUrl,
+    instancePolicies as ssmAgentPolicies,
+} from './ssm-agent'
 
 const config = new pulumi.Config('gateway')
 
@@ -207,7 +212,11 @@ export class Gateway extends pulumi.ComponentResource {
             ])
             .apply(([key, natCidrs, openVpnConfig]) => ({
                 ...defaultUserData,
-                packages: [...defaultUserData.packages, 'openvpn'],
+                packages: [
+                    ...defaultUserData.packages,
+                    'openvpn',
+                    getSsmAgentUrl({ arch: 'arm64' }),
+                ],
                 write_files: [
                     ...defaultUserData.write_files,
                     {
@@ -240,6 +249,28 @@ export class Gateway extends pulumi.ComponentResource {
                 ],
             }))
 
+        const role = new aws.iam.Role(
+            `${name}-instance`,
+            {
+                assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal(
+                    aws.iam.Principals.Ec2Principal,
+                ),
+            },
+            { parent: this },
+        )
+
+        ssmAgentPolicies.forEach(
+            (policyArn, index) =>
+                new aws.iam.RolePolicyAttachment(
+                    `${name}-instance-${index}`,
+                    {
+                        role: role.name,
+                        policyArn,
+                    },
+                    { parent: this },
+                ),
+        )
+
         const instance = new Instance(
             name,
             {
@@ -258,6 +289,7 @@ export class Gateway extends pulumi.ComponentResource {
                 dns: args.dns,
                 notificationsTopicArn: args.notificationsTopicArn,
                 offline: false,
+                instanceRoleId: role.id,
             },
             { parent: this },
         )

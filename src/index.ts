@@ -12,6 +12,7 @@ import { MailUser } from './lib/mail-user'
 import { DefaultNotifications, NotificationsTopic } from './lib/notifications'
 import { Plex } from './lib/plex'
 import { SecurityGroups } from './lib/security-groups'
+import { SsmAutomations } from './lib/ssm-automations'
 import { Vpc } from './lib/vpc'
 import { providers } from './providers'
 import './pulumi-state'
@@ -328,7 +329,9 @@ new aws.iam.UserPolicy('deleteme-certbot', {
 })
 
 // note: using google mail instead
-const ses = false
+const sesIsEnabled = false
+
+const ses = sesIsEnabled
     ? new MailServer('home.bennettp123.com', {
           domain: 'home.bennettp123.com',
       })
@@ -370,3 +373,5 @@ if (config.getBoolean('enable-homebridge-ecs')) {
         ],
     })
 }
+
+const automations = new SsmAutomations('home', {}, {})
