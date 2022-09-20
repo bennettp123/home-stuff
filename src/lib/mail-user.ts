@@ -64,14 +64,14 @@ export class MailUser extends pulumi.ComponentResource {
         )
 
         this.username = accessKey.id
-        this.password = pulumi.secret(
+        this.password = pulumi.secret<string>(
             pulumi
                 .all([
                     accessKey.encryptedSesSmtpPasswordV4,
                     privKey,
                     passphrase,
                 ])
-                .apply(async ([encrypted, privKey, passphrase]) => {
+                .apply<string>(async ([encrypted, privKey, passphrase]) => {
                     const privateKey = await openpgp.decryptKey({
                         privateKey: await openpgp.readPrivateKey({
                             binaryKey: Buffer.from(privKey, 'base64'),
