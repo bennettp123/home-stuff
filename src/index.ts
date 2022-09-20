@@ -144,6 +144,8 @@ const apSoutheast2c = {
         ).s.subnet,
 }
 
+const automations = new SsmAutomations('home', {}, {})
+
 export const gateway = new Gateway('home-gateway', {
     subnetIds: apSoutheast2c.public.id.apply((id) => [id]),
     vpcId,
@@ -181,6 +183,7 @@ export const gateway = new Gateway('home-gateway', {
         },
         routedCidrs: config.getObject<Array<string>>('home-cidr-blocks'),
     },
+    patchGroup: automations.patchGroup,
 })
 
 new DefaultRoutes('home-gateway', {
@@ -373,5 +376,3 @@ if (config.getBoolean('enable-homebridge-ecs')) {
         ],
     })
 }
-
-const automations = new SsmAutomations('home', {}, {})

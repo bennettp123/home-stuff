@@ -230,6 +230,17 @@ export interface InstanceArgs {
      *   - other resources will be retained
      */
     offline?: boolean
+
+    /**
+     * The patch group for the instance
+     */
+    patchGroup?: pulumi.Input<string>
+
+    /**
+     * If set, a volume with this many gigabytes will be created and mounted
+     * as a swap partition
+     */
+    swapGigs?: pulumi.Input<number>
 }
 
 /**
@@ -504,6 +515,19 @@ export class Instance extends pulumi.ComponentResource {
             (devices) => devices[0]?.deviceName ?? '/dev/xvda',
         )
 
+        const instanceTags = {
+            ...getTags({
+                Name: `${name}-instance`,
+            }),
+            ...(args.patchGroup ? { PatchGroup: args.patchGroup } : {}),
+        }
+
+        const iamInstanceProfile = args.instanceRoleId
+            ? new aws.iam.InstanceProfile(`${name}-instance-profile`, {
+                  role: args.instanceRoleId,
+              })
+            : undefined
+
         const launchTemplate = new aws.ec2.LaunchTemplate(
             `${name}-template`,
             {
@@ -519,15 +543,10 @@ export class Instance extends pulumi.ComponentResource {
                     },
                 },
                 imageId,
-                ...(args.instanceRoleId
+                ...(iamInstanceProfile
                     ? {
                           iamInstanceProfile: {
-                              arn: new aws.iam.InstanceProfile(
-                                  `${name}-instance-profile`,
-                                  {
-                                      role: args.instanceRoleId,
-                                  },
-                              ).arn,
+                              name: iamInstanceProfile.name,
                           },
                       }
                     : {}),
@@ -569,6 +588,20 @@ export class Instance extends pulumi.ComponentResource {
                                 .apply((argsUserData) => ({
                                     ...userData,
                                     ...(argsUserData ?? {}),
+                                    ...(() => {
+                                        const bootcmd = [
+                                            ...(argsUserData?.bootcmd ?? []),
+                                            ...(args.swapGigs
+                                                ? [
+                                                      'mkswap /dev/xvdf',
+                                                      'swapon /dev/xvdf',
+                                                  ]
+                                                : []),
+                                        ]
+                                        return bootcmd.length > 0
+                                            ? { bootcmd }
+                                            : {}
+                                    })(),
                                     write_files:
                                         args.rebootForKernelUpdates ?? true
                                             ? // reboot is enabled by default
@@ -612,6 +645,20 @@ export class Instance extends pulumi.ComponentResource {
                             kmsKeyId,
                         },
                     },
+                    ...(args.swapGigs
+                        ? [
+                              {
+                                  deviceName: '/dev/xvdf',
+                                  ebs: {
+                                      deleteOnTermination: 'true',
+                                      volumeSize: args.swapGigs ?? 1,
+                                      volumeType: 'gp3',
+                                      encrypted: 'true',
+                                      kmsKeyId,
+                                  },
+                              },
+                          ]
+                        : []),
                 ],
                 instanceInitiatedShutdownBehavior: 'stop',
                 creditSpecification: {
@@ -621,7 +668,7 @@ export class Instance extends pulumi.ComponentResource {
                 tagSpecifications: [
                     {
                         resourceType: 'instance',
-                        tags: getTags({ Name: `${name}-instance` }),
+                        tags: instanceTags,
                     },
                     {
                         resourceType: 'volume',
@@ -666,11 +713,12 @@ export class Instance extends pulumi.ComponentResource {
                               ),
                           },
                           sourceDestCheck: args.network?.sourceDestCheck,
-                          tags: getTags({ Name: `${name}-instance` }),
+                          tags: instanceTags,
                           volumeTags: getTags({
                               Name: `${name}-instance`,
                               InstanceName: `${name}-instance`,
                           }),
+                          iamInstanceProfile: iamInstanceProfile?.name,
                       },
                       {
                           parent: this,
