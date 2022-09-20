@@ -100,6 +100,21 @@ export class DefaultNotifications extends pulumi.ComponentResource {
                 },
                 pulumi.mergeOptions(opts, { parent: this }),
             ),
+            'ssm-compliance': new aws.cloudwatch.EventRule(
+                `${name}-ssm-compliance`,
+                {
+                    eventPattern: JSON.stringify({
+                        source: ['aws.ssm'],
+                        'detail-type': [
+                            'Configuration Compliance State Change',
+                        ],
+                        detail: {
+                            'compliance-status': ['non_compliant', 'compliant'],
+                        },
+                    }),
+                },
+                pulumi.mergeOptions(opts, { parent: this }),
+            ),
         }
 
         Object.entries(defaultRules).forEach(

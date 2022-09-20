@@ -107,6 +107,11 @@ export interface GatewayArgs extends Partial<InstanceArgs> {
      * An SNS topic for sending notifications
      */
     notificationsTopicArn: pulumi.Input<string>
+
+    /**
+     * The patch group for the instance
+     */
+    patchGroup?: pulumi.Input<string>
 }
 
 /**
@@ -216,6 +221,7 @@ export class Gateway extends pulumi.ComponentResource {
                     ...defaultUserData.packages,
                     'openvpn',
                     getSsmAgentUrl({ arch: 'arm64' }),
+                    'python3', // required by patch manager
                 ],
                 write_files: [
                     ...defaultUserData.write_files,
@@ -239,6 +245,7 @@ export class Gateway extends pulumi.ComponentResource {
                         (cidr) =>
                             `iptables -t nat -A POSTROUTING -o eth0 -s ${cidr} -j MASQUERADE`,
                     ),
+                    'systemctl start "openvpn@server"',
                 ],
                 runcmd: [
                     'set +x',
@@ -290,6 +297,8 @@ export class Gateway extends pulumi.ComponentResource {
                 notificationsTopicArn: args.notificationsTopicArn,
                 offline: false,
                 instanceRoleId: role.id,
+                patchGroup: args.patchGroup,
+                swapGigs: 1,
             },
             { parent: this },
         )
