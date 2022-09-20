@@ -11,7 +11,7 @@ specifiers:
   '@types/node': 16.11.49
   ip-address: ^8.1.0
   netmask: ^2.0.2
-  openpgp: ^5.4.0
+  openpgp: ~5.1.0
   prettier: 2.7.1
 
 dependencies:
@@ -23,7 +23,7 @@ dependencies:
   '@pulumi/tls': 4.6.0
   ip-address: 8.1.0
   netmask: 2.0.2
-  openpgp: 5.4.0
+  openpgp: 5.1.0
 
 devDependencies:
   '@types/netmask': 1.0.30
@@ -537,8 +537,8 @@ packages:
       wrappy: 1.0.2
     dev: false
 
-  /openpgp/5.4.0:
-    resolution: {integrity: sha512-XgQnK8SYy4Ycg9BDvrXTE4foMwME/+1EfGZWZirUU2VPzU1X3xx094fChjbP10+gUJifAcoWTsT2zAbdhFUxyg==}
+  /openpgp/5.1.0:
+    resolution: {integrity: sha512-keCno6QPMXWwfjrOOtT8fwZ5XgCcB7vZH80xb44SbJ49qQ11Efl2fFfqHpaie7jTQFjRKxgT8hSFPXJUjogNPw==}
     engines: {node: '>= 8.0.0'}
     dependencies:
       asn1.js: 5.4.1

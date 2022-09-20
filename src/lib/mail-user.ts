@@ -84,13 +84,13 @@ export class MailUser extends pulumi.ComponentResource {
                         binaryMessage: buf,
                     })
 
-                    const { data: decrypted } = (await openpgp.decrypt({
+                    const { data: decrypted } = await openpgp.decrypt({
                         message,
                         format: 'binary',
                         decryptionKeys: privateKey,
-                    })) as any // TODO fix this
+                    })
 
-                    return Buffer.from(decrypted).toString() as string
+                    return Buffer.from(decrypted).toString()
                 }),
         )
     }
