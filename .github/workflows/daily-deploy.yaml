@@ -1,15 +1,18 @@
-name: pulumi up
+name: pulumi up (scheduled)
 on:
-  pull_request:
-    branches:
-      - main
-    types:
-      - closed
+  schedule:
+    # run each day at 8am AWST
+    - cron: '0 0 * * *'
+
+    # testing (delete): run at 12:25 AWST on 21 Sep 2022
+    - cron: '25 4 21 9 *'
 
 jobs:
   up:
     if: github.event.pull_request.merged == true
     uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@master
+    with:
+      stack-name: home
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
