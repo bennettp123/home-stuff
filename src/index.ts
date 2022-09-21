@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import './dns-records'
 import { getTags } from './helpers'
+import { CostAlerts } from './lib/cost-alerts'
 import { DefaultRoutes } from './lib/default-routes'
 import { Cluster } from './lib/ecs-cluster'
 import { Gateway } from './lib/gateway'
@@ -376,3 +377,11 @@ if (config.getBoolean('enable-homebridge-ecs')) {
         ],
     })
 }
+
+new CostAlerts(
+    'home',
+    {
+        subscriberArns: [notifications['us-east-1'].topicArn],
+    },
+    { provider: providers['us-east-1'] },
+)
