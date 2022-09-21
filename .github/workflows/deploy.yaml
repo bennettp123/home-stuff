@@ -16,7 +16,6 @@ on:
 jobs:
   up:
     concurrency: deploy
-    if: github.event.pull_request.merged == true
     name: pulumi up
     runs-on: ubuntu-latest
     steps:
