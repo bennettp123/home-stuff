@@ -4,8 +4,8 @@ on:
     # run each day at 8am AWST
     - cron: '0 0 * * *'
 
-    # testing (delete): run at 12:25 AWST on 21 Sep 2022
-    - cron: '25 4 21 9 *'
+    # testing (delete)
+    - cron: '30 * * * *'
 
 jobs:
   up:
