@@ -10,7 +10,7 @@ on:
 jobs:
   up:
     if: github.event.pull_request.merged == true
-    uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@master
+    uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
     with:
       stack-name: home
     secrets:
