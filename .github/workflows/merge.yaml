@@ -9,7 +9,9 @@ on:
 jobs:
   up:
     if: github.event.pull_request.merged == true
-    uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@master
+    uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
+    with:
+      stack-name: home
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
