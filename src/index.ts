@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import './dns-records'
 import { getTags } from './helpers'
+import { Chatbot } from './lib/chatbot'
 import { CostAlerts } from './lib/cost-alerts'
 import { DefaultRoutes } from './lib/default-routes'
 import { Cluster } from './lib/ecs-cluster'
@@ -22,29 +23,39 @@ export { homebridge } from './homebridge-stuff'
 const config = new pulumi.Config('home-stuff')
 
 const notifications = {
-    default: new NotificationsTopic('ap-southeast-2', {
-        workAroundSomeOldTerraformBug: 'ap-southeast-2',
-    }),
+    'ap-southeast-2': new NotificationsTopic('ap-southeast-2', {}),
     'us-east-1': new NotificationsTopic(
         'us-east-1',
-        {
-            workAroundSomeOldTerraformBug: 'us-east-1',
-        },
+        {},
         { provider: providers['us-east-1'] },
+    ),
+    'us-east-2': new NotificationsTopic(
+        'us-east-2',
+        {},
+        { provider: providers['us-east-2'] },
     ),
 }
 
-new DefaultNotifications('ap-southeast-2', {
-    topicArn: notifications.default.topicArn,
-})
-
-new DefaultNotifications(
-    'us-east-1',
-    {
-        topicArn: notifications['us-east-1'].topicArn,
-    },
-    { provider: providers['us-east-1'] },
+Object.entries(notifications).map(
+    ([region, notificationsTopic]) =>
+        new DefaultNotifications(
+            region,
+            {
+                topicArn: notificationsTopic.topicArn,
+            },
+            {
+                ...(region === 'default'
+                    ? {}
+                    : {
+                          provider: providers[region],
+                      }),
+            },
+        ),
 )
+
+new Chatbot('home', {
+    topicArns: [...Object.values(notifications).map((topic) => topic.topicArn)],
+})
 
 const homeVpc = new Vpc('home', {
     cidrBlock: config.require<string>('vpc-cidr-block'),
@@ -161,7 +172,7 @@ export const gateway = new Gateway('home-gateway', {
         zone: 'Z1LNE5PQ9LO13V',
     },
     natCidrs: [homeVpc.vpc.vpc.cidrBlock],
-    notificationsTopicArn: notifications.default.topicArn,
+    notificationsTopicArn: notifications['ap-southeast-2'].topicArn,
     openvpn: {
         tunnel: {
             localAddress: config.require<string>(
@@ -251,7 +262,7 @@ export const plex = config.getBoolean('enable-plex')
               hostname: 'plex.home.bennettp123.com',
               preferPrivateIP: true,
           },
-          notificationsTopicArn: notifications.default.topicArn,
+          notificationsTopicArn: notifications['ap-southeast-2'].topicArn,
       })
     : undefined
 
@@ -277,7 +288,7 @@ export const automationServer = false
               fixedIpv6: true,
               useENI: true,
           },
-          notificationsTopicArn: notifications.default.topicArn,
+          notificationsTopicArn: notifications['ap-southeast-2'].topicArn,
       })
     : undefined
 

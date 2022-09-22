@@ -1,6 +1,5 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
-import * as random from '@pulumi/random'
 import { getTags } from '../helpers'
 
 const config = new pulumi.Config('common')
@@ -133,20 +132,10 @@ export class DefaultNotifications extends pulumi.ComponentResource {
 
 export class NotificationsTopic extends pulumi.ComponentResource {
     topicArn: pulumi.Output<string>
+
     constructor(
         name: string,
-        args?: {
-            /**
-             * Terraform is cooked and can't do sns_topic_policy across more
-             * than one region at a time.
-             *
-             * See https://github.com/hashicorp/terraform-provider-aws/issues/1763#issuecomment-477808313
-             *
-             * To work around this bug, set this to the region in which the
-             * topic should exist.
-             */
-            workAroundSomeOldTerraformBug?: string
-        },
+        args?: {},
         opts?: pulumi.ComponentResourceOptions,
     ) {
         super('bennettp123:notifications/NotificationsTopic', name, {}, opts)
@@ -222,23 +211,8 @@ export class NotificationsTopic extends pulumi.ComponentResource {
                 pulumi.mergeOptions(opts, { parent: this }),
             )
 
-        const aGoddamnRandomSuffix = new random.RandomString(
-            `${name}-a-goddamn-random-suffix`,
-            {
-                length: 5,
-                upper: true,
-                lower: true,
-                number: true,
-                special: false,
-            },
-            { parent: this },
-        ).result
-
-        const topicName = `${name}-topic`
-        const dummyArn = pulumi.interpolate`arn:aws:sns:${args?.workAroundSomeOldTerraformBug}:${accountNumber}:${topicName}-${aGoddamnRandomSuffix}`
-
         const topic = new aws.sns.Topic(
-            topicName,
+            `${name}-topic`,
             {
                 // AWS Chatbot needs encryption disabled :(
                 /*
@@ -249,40 +223,26 @@ export class NotificationsTopic extends pulumi.ComponentResource {
                     ),
                 ).id,
                 */
-                name: pulumi.interpolate`${topicName}-${aGoddamnRandomSuffix}`,
                 tags: getTags({
                     Name: name,
                 }),
-                ...(args?.workAroundSomeOldTerraformBug
-                    ? {
-                          policy: dummyArn.apply((dummyArn) =>
-                              makePolicyDoc(dummyArn),
-                          ).json,
-                      }
-                    : {}),
             },
             pulumi.mergeOptions(opts, {
                 parent: this,
-                ignoreChanges: args?.workAroundSomeOldTerraformBug
-                    ? []
-                    : ['policy'],
             }),
         )
 
-        const policy = args?.workAroundSomeOldTerraformBug
-            ? undefined
-            : new aws.sns.TopicPolicy(
-                  `${name}-topic-policy`,
-                  {
-                      arn: topic.arn,
-                      policy: topic.arn.apply((topicArn) =>
-                          makePolicyDoc(topicArn),
-                      ).json,
-                  },
-                  pulumi.mergeOptions(opts, { parent: this }),
-              )
+        const policy = new aws.sns.TopicPolicy(
+            `${name}-topic-policy`,
+            {
+                arn: topic.arn,
+                policy: topic.arn.apply((topicArn) => makePolicyDoc(topicArn))
+                    .json,
+            },
+            pulumi.mergeOptions(opts, { parent: this }),
+        )
 
         // wait for the policy to exist before exporting the topicArn
-        this.topicArn = (policy ?? topic).arn.apply(() => topic.arn)
+        this.topicArn = policy.arn.apply(() => topic.arn)
     }
 }
