@@ -4,9 +4,6 @@ on:
     # run each day at 8am AWST
     - cron: '0 0 * * *'
 
-    # testing (delete)
-    - cron: '56 * * * *'
-
 jobs:
   up:
     uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
