@@ -14,6 +14,34 @@ export function txtRecord(s: string) {
 }
 
 new aws.route53.Record(
+    'usg-aaaa',
+    {
+        name: 'usg.home.bennettp123.com',
+        type: 'AAAA',
+        zoneId: 'Z1LNE5PQ9LO13V',
+        ttl: 300,
+        records: ['2404:bf40:e402:1::1'],
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
+
+new aws.route53.Record(
+    'usg-a',
+    {
+        name: 'usg.home.bennettp123.com',
+        type: 'A',
+        zoneId: 'Z1LNE5PQ9LO13V',
+        ttl: 300,
+        records: ['210.10.212.154'],
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
+
+new aws.route53.Record(
     'homebridge-aaaa',
     {
         name: 'homebridge.home.bennettp123.com',

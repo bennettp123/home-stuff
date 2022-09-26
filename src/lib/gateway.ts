@@ -206,6 +206,14 @@ export class Gateway extends pulumi.ComponentResource {
                         ...routes,
                         `port ${listenOnPort ?? 1194}`,
                         `remote ${remoteAddress} ${remotePort ?? 1194}`,
+
+                        /**
+                         * Amazon Linux 2 uses OpenVPN 2.4, but USG still uses
+                         * OpenVPN 2.3. USG defaults to BF-CBC. We override
+                         * it to AES-256-CBC using config.gateway.json -- and
+                         * set it here to match
+                         */
+                        `cipher AES-256-CBC`,
                     ].join('\n') + '\n',
             )
 
