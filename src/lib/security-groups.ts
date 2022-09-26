@@ -4,7 +4,8 @@ import * as ipAddress from 'ip-address'
 import { getTags } from '../helpers'
 
 export const homeIPv6s = [
-    '2404:bf40:e402::/48', // gabo rd
+    '2404:bf40:e402::/48', // gabo rd LAN
+    '2001:c78:1300:1a::2/128', // gabo rd WAN
 ]
 
 export const trustedPublicIPv6s = homeIPv6s // TODO add the VPC cidr to this
@@ -12,6 +13,7 @@ export const trustedPublicIPv6s = homeIPv6s // TODO add the VPC cidr to this
 export const allowSshFromIpv6 = [
     '2001:8000::/20', // telstra IPv6, because I'm lazy AF
     ...trustedPublicIPv6s,
+    // extra IPv6 addresses go here
 ]
 
 export const homePublicIPv4s = [
@@ -25,8 +27,8 @@ export const workPublicIPv4s = [
 export const trustedPublicIPv4s = [...homePublicIPv4s, ...workPublicIPv4s]
 
 export const allowSshFromIpv4 = [
-    '49.196.54.77/32', // optus mobile; delete me
     ...trustedPublicIPv4s,
+    // extra IPv4 addresses go here
 ]
 
 export const homeIPv4s = [

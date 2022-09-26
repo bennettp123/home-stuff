@@ -24,7 +24,7 @@ config:
   - 192.168.0.0/18
   - 192.168.128.0/18
   - 192.168.192.0/18
-  home-stuff:home-public-ip: 210.10.212.154
+  home-stuff:home-public-ip: usg.home.bennettp123.com
   home-stuff:openvpn-listen-on-port: "1194"
   home-stuff:openvpn-remote-port: "1194"
   home-stuff:openvpn-tunnel-address-local: 192.168.127.2
