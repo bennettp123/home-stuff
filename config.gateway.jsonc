@@ -1,0 +1,96 @@
+{
+    "interfaces": {
+        "ethernet": {
+            "eth1": {
+                // this applies to untagged traffic only
+                "ipv6": {
+                    "router-advert": {
+                        /**
+                         * I've observed the following route adverts from the
+                         * USG gateway with default settings:
+                         *  - default route lifetime 180s (AdvDefaultLifetime)
+                         *  - rdnss lifetime 60s (AdvRDNSSLifetime)
+                         *  - dnssl lifetime 60s (AdvDNSSLLifetime)
+                         *  - max interval 600s (MaxRtrAdvInterval)
+                         *
+                         * The max interval is 600 seconds, longer than the
+                         * lifetime of the route (and also longer than the
+                         * lifetime of the DNS settings).
+
+                         * This causes devices to periodically "lose" their
+                         * default routes and their DNS settings.
+                         *
+                         * Override here.
+                         *
+                         * Note that vyatta 1.2 has no native way to set
+                         * AdvRDNSSLifetime or AdvDNSSLLifetime, so we need
+                         * to disable the auto settings in the unifi console,
+                         * and set them manually using radvd-options instead.
+                         *
+                         * Otherwise, the RA will include two identical RDNSS
+                         * options, one with a 60 second lifetime. This is
+                         * likely to cause undefined behaviour/edge cases.
+                         */
+                        "default-lifetime": "1800",
+                        "max-interval": "60",
+                        "min-interval": "20",
+                        "radvd-options": "DNSSL mgmt.home.bennettp123.com { AdvDNSSLLifetime 5400; }; RDNSS 2404:bf40:e402:1::1 { AdvRDNSSLifetime 5400; };"
+                    }
+                },
+                "vif": {
+                    "178": {
+                        // user vlan (178)
+                        "ipv6": {
+                            "router-advert": {
+                                "default-lifetime": "1800",
+                                "max-interval": "60",
+                                "min-interval": "20",
+                                "radvd-options": "DNSSL home.bennettp123.com { AdvDNSSLLifetime 5400; }; RDNSS 2404:bf40:e402:178::1 { AdvRDNSSLifetime 5400; };"
+                            }
+                        }
+                    },
+                    "33": {
+                        // iot vlan (33)
+                        "ipv6": {
+                            "router-advert": {
+                                "default-lifetime": "1800",
+                                "max-interval": "60",
+                                "min-interval": "20",
+                                "radvd-options": "DNSSL home.bennettp123.com { AdvDNSSLLifetime 5400; }; RDNSS 2404:bf40:e402:33::1 { AdvRDNSSLifetime 5400; };"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "openvpn": {
+            "vtun64": {
+                "description": "aws-vpc",
+                "firewall": {
+                    "in": {
+                        "ipv6-name": "LANv6_IN",
+                        "name": "LAN_IN"
+                    },
+                    "local": {
+                        "ipv6-name": "LANv6_LOCAL",
+                        "name": "LAN_LOCAL"
+                    },
+                    "out": {
+                        "ipv6-name": "LANv6_OUT",
+                        "name": "LAN_OUT"
+                    }
+                },
+                "local-address": {
+                    "192.168.127.1": "''"
+                },
+                "local-port": "1194",
+                "mode": "site-to-site",
+                "openvpn-option": ["--up-delay", "--cipher AES-256-CBC"],
+                "remote-address": "192.168.127.2",
+                "remote-host": ["gw.home.bennettp123.com"],
+                "remote-port": "1194",
+                "shared-secret-key-file": "/config/auth/secret_60dd2aae0884180685ae33a6_60eff13308841805e5f1f6ae"
+            }
+        }
+    }
+}
