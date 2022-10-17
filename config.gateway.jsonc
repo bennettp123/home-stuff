@@ -22,6 +22,14 @@
                          *
                          * Override here.
                          *
+                         * ```
+                         * rdnss/dnssl > default-lifetime > max-interval
+                         * ```
+                         *
+                         * This will ensure radvd is configured to send out
+                         * advertisements BEFORE the previous adverts are set
+                         * to expire.
+                         *
                          * Note that vyatta 1.2 has no native way to set
                          * AdvRDNSSLifetime or AdvDNSSLLifetime, so we need
                          * to disable the auto settings in the unifi console,
@@ -30,6 +38,8 @@
                          * Otherwise, the RA will include two identical RDNSS
                          * options, one with a 60 second lifetime. This is
                          * likely to cause undefined behaviour/edge cases.
+                         *
+                         * Discussion: https://community.ui.com/questions/BUG-REPORT-plus-possible-workaround-fix-IPv6-devices-intermittently-lose-their-default-route/0139cf30-aead-4d27-bf04-6df2fd77615e
                          */
                         "default-lifetime": "1800",
                         "max-interval": "60",
