@@ -24,6 +24,31 @@ export const workPublicIPv4s = [
     '202.41.193.62/32', // herdsman pde
 ]
 
+/**
+ * Outbound SSH is permitted from the gateway to these IPv6 CIDRs
+ */
+export const gatewayExtraOutboundSshIPv6s = [
+    '2406:da1c:358:b800::/56', // news-shared-thewest-networking-vpc
+    '2406:da1c:fa5:5000::/56', // news-shared-perthnow-networking-vpc
+    '2406:da1c:8a3:5c00::/56', // news-shared-sevennews-networking-vpc
+    '2406:da1c:6ab:ec00::/56', // news-shared-branch-deploys-networking-vpc
+    '2406:da1c:af6:fa00::/56', // ssapi-shared-prd-vpc
+    '2406:da1c:44a:1a00::/56', // ssw-shared-dev-vpc
+    '2406:da1c:22:d300::/56', // ssapi-shared-dev-vpc
+    '2406:da1c:50d:a200::/56', // ssw-shared-prd-vpc
+]
+
+/**
+ * Outbound SSH is permitted from the gateway to these IPv4 CIDRs
+ */
+export const gatewayExtraOutboundSshIPv4s = [
+    '54.252.158.21/32', // bastion.swmdigital.io
+    '54.79.218.38/32', // the-west-prod jumpbox
+    '52.63.148.231/32', // perthnow-prod jumpbox
+    '3.104.86.9/32', // sevennews-prod jumpbox
+    '13.55.57.151/32', // branch-deploys jumpbox
+]
+
 export const trustedPublicIPv4s = [...homePublicIPv4s, ...workPublicIPv4s]
 
 export const allowSshFromIpv4 = [
@@ -454,6 +479,14 @@ export class SecurityGroups extends pulumi.ComponentResource {
             { parent: this },
         )
 
+        const gatewayEgressSsh = {
+            ipv6: [vpc.ipv6CidrBlock, ...gatewayExtraOutboundSshIPv6s],
+            ipv4: pulumi
+                .output(vpc.cidrBlockAssociations)
+                .apply((ass) => ass.map((block) => block.cidrBlock))
+                .apply((cidrs) => [...cidrs, ...gatewayExtraOutboundSshIPv4s]),
+        }
+
         this.gatewaySecurityGroup = new aws.ec2.SecurityGroup(
             `${name}-gw`,
             {
@@ -496,19 +529,15 @@ export class SecurityGroups extends pulumi.ComponentResource {
                 ],
                 egress: [
                     {
-                        ipv6CidrBlocks: [vpc.ipv6CidrBlock],
-                        description: 'allow outgoing SSH to VPC',
+                        ipv6CidrBlocks: gatewayEgressSsh.ipv6,
+                        description: 'allow outgoing SSH to permitted CIDRs',
                         protocol: 'tcp',
                         fromPort: 22,
                         toPort: 22,
                     },
                     {
-                        cidrBlocks: pulumi
-                            .output(vpc.cidrBlockAssociations)
-                            .apply((ass) =>
-                                ass.map((block) => block.cidrBlock),
-                            ),
-                        description: 'allow outgoing SSH to VPC',
+                        cidrBlocks: gatewayEgressSsh.ipv4,
+                        description: 'allow outgoing SSH to permitted CIDRs',
                         protocol: 'tcp',
                         fromPort: 22,
                         toPort: 22,
