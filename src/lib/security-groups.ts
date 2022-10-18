@@ -543,6 +543,20 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 22,
                     },
                     {
+                        ipv6CidrBlocks: gatewayExtraOutboundSshIPv6s,
+                        description: 'allow SSH to bitbucket over tcp 7999',
+                        protocol: 'tcp',
+                        fromPort: 7999,
+                        toPort: 7999,
+                    },
+                    {
+                        cidrBlocks: gatewayExtraOutboundSshIPv4s,
+                        description: 'allow SSH to bitbucket over tcp 7999',
+                        protocol: 'tcp',
+                        fromPort: 7999,
+                        toPort: 7999,
+                    },
+                    {
                         protocol: '-1',
                         fromPort: 0,
                         toPort: 0,
