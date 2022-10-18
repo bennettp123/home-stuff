@@ -47,6 +47,7 @@ export const gatewayExtraOutboundSshIPv4s = [
     '52.63.148.231/32', // perthnow-prod jumpbox
     '3.104.86.9/32', // sevennews-prod jumpbox
     '13.55.57.151/32', // branch-deploys jumpbox
+    '13.238.72.35/32', // jumpbox.cue-sandbox.swm.com.au
 ]
 
 export const trustedPublicIPv4s = [...homePublicIPv4s, ...workPublicIPv4s]
