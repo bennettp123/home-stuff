@@ -891,9 +891,9 @@ export function getAmazonLinux2AmiId(
             await aws.ssm
                 .getParameter(
                     {
-                        name: `/aws/service/ami-amazon-linux-latest/amzn2-ami-minimal-hvm-${
+                        name: `/aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-${
                             arch === 'amd64' ? 'x86_64' : arch
-                        }-ebs`,
+                        }-gp2`,
                     },
                     { ...opts, async: true },
                 )
