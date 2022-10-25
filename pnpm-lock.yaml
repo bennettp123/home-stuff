@@ -9,7 +9,7 @@ specifiers:
   '@pulumi/random': ^4.8.2
   '@pulumi/tls': ^4.6.1
   '@types/netmask': 1.0.30
-  '@types/node': 16.11.68
+  '@types/node': 18.11.5
   ip-address: ^8.1.0
   netmask: ^2.0.2
   openpgp: ~5.1.0
@@ -29,7 +29,7 @@ dependencies:
 
 devDependencies:
   '@types/netmask': 1.0.30
-  '@types/node': 16.11.68
+  '@types/node': 18.11.5
   prettier: 2.7.1
 
 packages:
@@ -38,7 +38,7 @@ packages:
     resolution: {integrity: sha512-4qJqqn+CU/nBydz9ePJP+oa8dz0U42Ut/GejlbyaQ1xTkynCc+ndNHHnISlNeHawDsv4MOAyP3mV/EnDNUw2zA==}
     engines: {node: ^8.13.0 || >=10.10.0}
     dependencies:
-      '@types/node': 16.11.68
+      '@types/node': 18.11.5
     dev: false
 
   /@logdna/tail-file/2.1.0:
@@ -304,7 +304,7 @@ packages:
     resolution: {integrity: sha512-ATA/xrS7CZ3A2WCPVY4eKdNpybq56zqlTirnHhhyOztZM/lPxJzusOBI3BsaXbu6FrUluqzvMlI4sZ6BDYMlMg==}
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 16.11.68
+      '@types/node': 18.11.5
     dev: false
 
   /@types/minimatch/5.1.2:
@@ -318,12 +318,12 @@ packages:
   /@types/node-fetch/2.6.2:
     resolution: {integrity: sha512-DHqhlq5jeESLy19TYhLakJ07kNumXWjcDdxXsLUMJZ6ue8VZJj4kLPQVE/2mdHh3xZziNF1xppu5lwmS53HR+A==}
     dependencies:
-      '@types/node': 16.11.68
+      '@types/node': 18.11.5
       form-data: 3.0.1
     dev: false
 
-  /@types/node/16.11.68:
-    resolution: {integrity: sha512-JkRpuVz3xCNCWaeQ5EHLR/6woMbHZz/jZ7Kmc63AkU+1HxnoUugzSWMck7dsR4DvNYX8jp9wTi9K7WvnxOIQZQ==}
+  /@types/node/18.11.5:
+    resolution: {integrity: sha512-3JRwhbjI+cHLAkUorhf8RnqUbFXajvzX4q6fMn5JwkgtuwfYtRQYI3u4V92vI6NJuTsbBQWWh3RZjFsuevyMGQ==}
 
   /@types/tmp/0.0.33:
     resolution: {integrity: sha512-gVC1InwyVrO326wbBZw+AO3u2vRXz/iRWq9jYhpG4W8LXyIgDv3ZmcLQ5Q4Gs+gFMyqx+viFoFT+l3p61QFCmQ==}
