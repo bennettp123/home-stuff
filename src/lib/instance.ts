@@ -639,7 +639,7 @@ export class Instance extends pulumi.ComponentResource {
                         deviceName,
                         ebs: {
                             deleteOnTermination: 'true',
-                            volumeSize: args.rootVolumeSize ?? 4,
+                            volumeSize: args.rootVolumeSize ?? 8,
                             volumeType: 'gp3',
                             encrypted: 'true',
                             kmsKeyId,
