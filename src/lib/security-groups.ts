@@ -50,6 +50,8 @@ export const gatewayExtraOutboundSshIPv4s = [
     '13.238.72.35/32', // jumpbox.cue-sandbox.swm.com.au
 ]
 
+export const bitbucketIps = ['52.62.161.35/32', '13.210.30.53/32']
+
 export const trustedPublicIPv4s = [...homePublicIPv4s, ...workPublicIPv4s]
 
 export const allowSshFromIpv4 = [
@@ -544,14 +546,7 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 22,
                     },
                     {
-                        ipv6CidrBlocks: gatewayExtraOutboundSshIPv6s,
-                        description: 'allow SSH to bitbucket over tcp 7999',
-                        protocol: 'tcp',
-                        fromPort: 7999,
-                        toPort: 7999,
-                    },
-                    {
-                        cidrBlocks: gatewayExtraOutboundSshIPv4s,
+                        cidrBlocks: bitbucketIps,
                         description: 'allow SSH to bitbucket over tcp 7999',
                         protocol: 'tcp',
                         fromPort: 7999,
