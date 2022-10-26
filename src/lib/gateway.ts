@@ -198,7 +198,7 @@ export class Gateway extends pulumi.ComponentResource {
                     [Peer]
                     PublicKey = ${peerkey}
                     PresharedKey = ${presharedkey}
-                    Endpoint = usg.home.bennettp123.com:37081
+                    Endpoint = udm-ext.home.bennettp123.com:37081
                     #AllowedIps = 2406:da1c:a70:9300::/56, fe80::1/128, 192.168.127.2/32, 192.168.0.0/18, 192.168.128.0/18, 192.168.192.0/18
                     AllowedIps = 192.168.127.2/32, 192.168.0.0/18, 192.168.128.0/18, 192.168.192.0/18
                     PersistentKeepalive = 3
