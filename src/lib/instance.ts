@@ -737,15 +737,6 @@ export class Instance extends pulumi.ComponentResource {
         this.privateIp = nic ? nic.privateIp : instance?.privateIp ?? privateIp
 
         if (eip && instance) {
-            // associates the static IP with the instance
-            new aws.ec2.EipAssociation(
-                `${name}-eip-assoc`,
-                {
-                    publicIp: eip?.publicIp,
-                    instanceId: instance.id,
-                },
-                { parent: this },
-            )
             this.ip = args.dns?.preferPrivateIP
                 ? this.privateIp ?? eip.publicIp
                 : eip.publicIp
