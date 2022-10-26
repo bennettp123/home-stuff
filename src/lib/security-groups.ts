@@ -512,6 +512,20 @@ export class SecurityGroups extends pulumi.ComponentResource {
                         toPort: 22,
                     },
                     {
+                        ipv6CidrBlocks: homeIPv6s,
+                        description: 'allow wireguard VPN from home',
+                        protocol: 'udp',
+                        fromPort: 37081,
+                        toPort: 37081,
+                    },
+                    {
+                        cidrBlocks: homePublicIPv4s,
+                        description: 'allow wireguard VPN from home',
+                        protocol: 'udp',
+                        fromPort: 37081,
+                        toPort: 37081,
+                    },
+                    {
                         protocol: '-1',
                         fromPort: 0,
                         toPort: 0,

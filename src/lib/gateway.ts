@@ -168,6 +168,7 @@ export class Gateway extends pulumi.ComponentResource {
     ) {
         super('bennettp123:gateway/Gateway', name, args, opts)
 
+        // TODO add this to wireguard config
         const routes = pulumi.output(args.openvpn.routedCidrs).apply((cidrs) =>
             (cidrs ?? []).map((cidr) => {
                 const subnet = new Netmask(cidr)
@@ -175,94 +176,190 @@ export class Gateway extends pulumi.ComponentResource {
             }),
         )
 
-        const openVpnConfig = pulumi
+        const wireguard = {
+            publickey: config.requireSecret('wireguard-publickey'),
+            privatekey: config.requireSecret('wireguard-privatekey'),
+            presharedkey: config.requireSecret('wireguard-presharedkey'),
+            peerkey: config.requireSecret('wireguard-peerkey'),
+        }
+        const wireguardConf = pulumi
             .all([
-                routes,
-                args.openvpn.tunnel.localAddress,
-                args.openvpn.tunnel.remoteAddress,
-                args.openvpn.listenOnPort,
-                args.openvpn.remote.address,
-                args.openvpn.remote.port,
+                wireguard.peerkey,
+                wireguard.privatekey,
+                wireguard.presharedkey,
             ])
-            .apply(
-                ([
-                    routes,
-                    localTunnelAddress,
-                    remoteTunnelAddress,
-                    listenOnPort,
-                    remoteAddress,
-                    remotePort,
-                ]) =>
-                    [
-                        `ifconfig ${localTunnelAddress} ${remoteTunnelAddress}`,
-                        `dev tun`,
-                        `secret static.key`,
-                        `keepalive 10 60`,
-                        `ping-timer-rem`,
-                        `persist-tun`,
-                        `persist-key`,
-                        `user nobody`,
-                        `group nobody`,
-                        ...routes,
-                        `port ${listenOnPort ?? 1194}`,
-                        `remote ${remoteAddress} ${remotePort ?? 1194}`,
+            .apply(([peerkey, privatekey, presharedkey]) =>
+                `   [Interface]
+                    #Address = fe80::1/64, 192.168.127.1/24
+                    Address = 192.168.127.1/24
+                    PrivateKey = ${privatekey}
+                    ListenPort = 37081
 
-                        /**
-                         * Amazon Linux 2 uses OpenVPN 2.4, but USG still uses
-                         * OpenVPN 2.3. USG defaults to BF-CBC. We override
-                         * it to AES-256-CBC using config.gateway.json -- and
-                         * set it here to match
-                         */
-                        `cipher AES-256-CBC`,
-                    ].join('\n') + '\n',
+                    [Peer]
+                    PublicKey = ${peerkey}
+                    PresharedKey = ${presharedkey}
+                    Endpoint = usg.home.bennettp123.com:37081
+                    #AllowedIps = 2406:da1c:a70:9300::/56, fe80::1/128, 192.168.127.2/32, 192.168.0.0/18, 192.168.128.0/18, 192.168.192.0/18
+                    AllowedIps = 192.168.127.2/32, 192.168.0.0/18, 192.168.128.0/18, 192.168.192.0/18
+                    PersistentKeepalive = 3
+                `
+                    .split('\n')
+                    .map((line) => line.replace(/^\s*/, ''))
+                    .join('\n'),
             )
+
+        /**
+         * https://www.wireguard.com/compilation/
+         * The AMI includes kernel 5.10 preinstalled, so there's no need to build the
+         * kernel modules. However, EPEL7 doesn't provide wireguard-tools for arm64,
+         * and I couldn't find prebuilt binaries anywhere, so... let's just compile it.
+         */
+        const installWireguardTools = `
+            #!/bin/sh
+            cd "$(mktemp -d)"
+            git clone https://git.zx2c4.com/wireguard-tools wireguard-tools
+            make -C wireguard-tools/src -j"$(nproc)"
+            sudo make -C wireguard-tools/src install
+            RESULT=$?
+            rm -rf "$(pwd)"
+            exit $RESULT
+        `
+            .split('\n')
+            .map((line) => line.replace(/^\s*/, ''))
+            .join('\n')
+
+        // https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-linux-ami-basics.html#amazon-linux-image-id
+        const enableKernelLivePatching = `
+            #!/bin/sh
+            sudo yum update -t -y kpatch-runtime
+            sudo yum kernel-livepatch -t -y enable
+            sudo systemctl enable kpatch.service
+            sudo amazon-linux-extras enable livepatch
+        `
+            .split('\n')
+            .map((line) => line.replace(/^\s*/, ''))
+            .join('\n')
 
         const userData = pulumi
             .all([
-                config.requireSecret('openvpn-shared-secret'),
                 args.natCidrs,
-                openVpnConfig,
+                wireguard.publickey,
+                wireguard.privatekey,
+                wireguard.presharedkey,
+                wireguardConf,
             ])
-            .apply(([key, natCidrs, openVpnConfig]) => ({
-                ...defaultUserData,
-                packages: [
-                    ...defaultUserData.packages,
-                    'openvpn',
-                    getSsmAgentUrl({ arch: 'arm64' }),
-                    'python3', // required by patch manager
-                ],
-                write_files: [
-                    ...defaultUserData.write_files,
-                    {
-                        path: '/etc/openvpn/server.conf',
-                        owner: 'root:root',
-                        permissions: '0644',
-                        content: openVpnConfig,
-                    },
-                    {
-                        path: '/etc/openvpn/static.key',
-                        owner: 'root:root',
-                        permissions: '0600',
-                        content: key,
-                    },
-                ],
-                bootcmd: [
-                    'echo 1 > /proc/sys/net/ipv4/ip_forward',
-                    'echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp',
-                    ...(natCidrs ?? []).map(
-                        (cidr) =>
-                            `iptables -t nat -A POSTROUTING -o eth0 -s ${cidr} -j MASQUERADE`,
-                    ),
-                    'systemctl start "openvpn@server"',
-                ],
-                runcmd: [
-                    'set +x',
-                    'exec > /tmp/runcmd-logs 2>&1',
-                    ...defaultUserData.runcmd,
-                    'systemctl enable "openvpn@server"',
-                    'systemctl start "openvpn@server"',
-                ],
-            }))
+            .apply(
+                ([
+                    natCidrs,
+                    publickey,
+                    privatekey,
+                    presharedkey,
+                    wireguardConf,
+                ]) => ({
+                    ...defaultUserData,
+                    packages: [
+                        ...defaultUserData.packages,
+
+                        // these are used for kernel live patching
+                        //'binutils',
+                        //'yum-plugin-kernel-livepatch',
+                        //'kpatch-runtime',
+
+                        // this is for wireguard-tools -- most of
+                        // '@Development Tools' is unnecessary.
+                        'make',
+                        'gcc',
+                        'git',
+
+                        getSsmAgentUrl({ arch: 'arm64' }),
+                        'python3', // required by patch manager
+                    ],
+                    write_files: [
+                        ...defaultUserData.write_files,
+                        {
+                            path: '/etc/wireguard/publickey',
+                            owner: 'root:root',
+                            permissions: '0600',
+                            content: publickey,
+                        },
+                        {
+                            path: '/etc/wireguard/privatekey',
+                            owner: 'root:root',
+                            permissions: '0600',
+                            content: privatekey,
+                        },
+                        {
+                            path: '/etc/wireguard/presharedkey',
+                            owner: 'root:root',
+                            permissions: '0600',
+                            content: presharedkey,
+                        },
+                        {
+                            path: '/etc/wireguard/wg0.conf',
+                            owner: 'root:root',
+                            permissions: '0600',
+                            content: wireguardConf,
+                        },
+                        {
+                            path: '/opt/bennettp123/bin/install-wireguard-tools',
+                            owner: 'root:root',
+                            permissions: '0755',
+                            content: installWireguardTools,
+                        },
+                        {
+                            path: '/opt/bennettp123/bin/enable-kernel-live-patching',
+                            owner: 'root:root',
+                            permissions: '0755',
+                            content: enableKernelLivePatching,
+                        },
+                    ],
+                    bootcmd: [
+                        'set +x',
+                        'exec >/tmp/bootcmd-logs 2>&1',
+                        'echo 1 > /proc/sys/net/ipv4/ip_forward',
+                        'echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp',
+                        'echo 1 > /proc/sys/net/ipv6/all/forwarding',
+                        ...(natCidrs ?? []).map(
+                            (cidr) =>
+                                `iptables -t nat -A POSTROUTING -o eth0 -s ${cidr} -j MASQUERADE`,
+                        ),
+                        'systemctl start "wg-quick@wg0.service"',
+                    ],
+                    runcmd: [
+                        'set +x',
+                        'exec > /tmp/runcmd-logs 2>&1',
+                        ...defaultUserData.runcmd,
+
+                        'mkdir -p /etc/sysconfig/network-scripts',
+
+                        // By default, forwarding isn't enabled. Enable it
+                        // globally, and explicityly enable accept_ra too.
+                        'echo "IPV6FORWARDING=yes" >> /etc/sysconfig/network',
+                        'echo "IPV6_AUTOCONF=yes" >> /etc/sysconfig/network',
+
+                        // Enable forwarding and accept_ra for eth0 and wg0
+                        'echo "IPV6FORWARDING=yes" >> /etc/sysconfig/network-scripts/ifcfg-eth0',
+                        'echo "IPV6_ROUTER=yes" >> /etc/sysconfig/network-scripts/ifcfg-eth0',
+                        'echo "IPV6_AUTOCONF=yes" >> /etc/sysconfig/network-scripts/ifcfg-eth0',
+                        'echo "IPV6FORWARDING=yes" >> /etc/sysconfig/network-scripts/ifcfg-wg0',
+
+                        // restart networking to apply the settings above
+                        // (not sure if this is needed)
+                        '/sbin/service network restart',
+                        'ifdown eth0',
+                        'ifup eth0',
+
+                        // install and enable wireguard
+                        '/opt/bennettp123/bin/install-wireguard-tools',
+                        'systemctl enable "wg-quick@wg0.service"',
+                        'systemctl start "wg-quick@wg0.service"',
+                        'ping -c1 192.168.127.2',
+
+                        // enable kernel live patching
+                        '/opt/bennettp123/bin/enable-kernel-live-patching',
+                    ],
+                }),
+            )
 
         const role = new aws.iam.Role(
             `${name}-instance`,
