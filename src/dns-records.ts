@@ -77,7 +77,6 @@ new aws.route53.Record(
         zoneId: 'Z1LNE5PQ9LO13V',
         ttl: 300,
         records: ['2001:c78:1300:1a::2'],
-        allowOverwrite: true,
     },
     {
         deleteBeforeReplace: true,
@@ -92,7 +91,6 @@ new aws.route53.Record(
         zoneId: 'Z1LNE5PQ9LO13V',
         ttl: 300,
         records: ['210.10.212.154'],
-        allowOverwrite: true,
     },
     {
         deleteBeforeReplace: true,
