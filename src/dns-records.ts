@@ -44,7 +44,7 @@ new aws.route53.Record(
 new aws.route53.Record(
     'udm-aaaa',
     {
-        name: 'usg.home.bennettp123.com',
+        name: 'udm.home.bennettp123.com',
         type: 'AAAA',
         zoneId: 'Z1LNE5PQ9LO13V',
         ttl: 300,
@@ -58,7 +58,7 @@ new aws.route53.Record(
 new aws.route53.Record(
     'udm-a',
     {
-        name: 'usg.home.bennettp123.com',
+        name: 'udm.home.bennettp123.com',
         type: 'A',
         zoneId: 'Z1LNE5PQ9LO13V',
         ttl: 300,
@@ -72,11 +72,11 @@ new aws.route53.Record(
 new aws.route53.Record(
     'udm-ext-aaaa',
     {
-        name: 'usg.home.bennettp123.com',
+        name: 'udm-ext.home.bennettp123.com',
         type: 'AAAA',
         zoneId: 'Z1LNE5PQ9LO13V',
         ttl: 300,
-        records: ['2404:bf40:e402:1::1'],
+        records: ['2001:c78:1300:1a::2'],
     },
     {
         deleteBeforeReplace: true,
@@ -86,11 +86,11 @@ new aws.route53.Record(
 new aws.route53.Record(
     'udm-ext-a',
     {
-        name: 'usg.home.bennettp123.com',
+        name: 'udm-ext.home.bennettp123.com',
         type: 'AAAA',
         zoneId: 'Z1LNE5PQ9LO13V',
         ttl: 300,
-        records: ['2001:c78:1300:1a::2'],
+        records: ['210.10.212.154'],
     },
     {
         deleteBeforeReplace: true,
