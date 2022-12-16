@@ -19,6 +19,7 @@ import { Vpc } from './lib/vpc'
 import { providers } from './providers'
 import './pulumi-state'
 export { homebridge } from './homebridge-stuff'
+export { udm } from './udm-stuff'
 
 const config = new pulumi.Config('home-stuff')
 
