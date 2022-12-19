@@ -1,11 +1,11 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@pulumi/aws': ^5.14.0
+  '@pulumi/aws': ^5.24.0
   '@pulumi/aws-native': ^0.45.0
-  '@pulumi/awsx': ^1.0.0
-  '@pulumi/docker': ^3.4.1
-  '@pulumi/pulumi': ^3.40.1
+  '@pulumi/awsx': ^1.0.1
+  '@pulumi/docker': ^3.6.1
+  '@pulumi/pulumi': ^3.50.0
   '@pulumi/random': ^4.8.2
   '@pulumi/tls': ^4.6.1
   '@types/netmask': 1.0.30
@@ -16,11 +16,11 @@ specifiers:
   prettier: 2.8.1
 
 dependencies:
-  '@pulumi/aws': 5.14.0
+  '@pulumi/aws': 5.24.0
   '@pulumi/aws-native': 0.45.0
   '@pulumi/awsx': 1.0.1
-  '@pulumi/docker': 3.4.1
-  '@pulumi/pulumi': 3.40.1
+  '@pulumi/docker': 3.6.1
+  '@pulumi/pulumi': 3.50.0
   '@pulumi/random': 4.8.2
   '@pulumi/tls': 4.6.1
   ip-address: 8.1.0
@@ -191,7 +191,7 @@ packages:
     resolution: {integrity: sha512-PegEOix3vDJ7bH4dEz9snsb621clfkdv40LYRc0MTFnuBd2v/W6ZyJG4Ki1dk6Zn1NIsHKzFDKkRcrG9K9X8Lg==}
     requiresBuild: true
     dependencies:
-      '@pulumi/pulumi': 3.40.1
+      '@pulumi/pulumi': 3.50.0
       '@types/glob': 5.0.37
       '@types/node-fetch': 2.6.2
       '@types/tmp': 0.0.33
@@ -204,25 +204,11 @@ packages:
       - supports-color
     dev: false
 
-  /@pulumi/aws/5.14.0:
-    resolution: {integrity: sha512-Sr+54jI/zEwl/dV1nRGR+UAlcSAm12cHpAAwXRfGaTjVu/QTDakxa14f0PF5DaXPjdkuQocWc2472mF0hlrniA==}
-    requiresBuild: true
-    dependencies:
-      '@pulumi/pulumi': 3.40.1
-      aws-sdk: 2.950.0
-      builtin-modules: 3.0.0
-      mime: 2.5.2
-      read-package-tree: 5.3.1
-      resolve: 1.20.0
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
   /@pulumi/aws/5.24.0:
     resolution: {integrity: sha512-6+fN62GR9nHKU+ZU46YQ6y5E/ikvgkXfbzw10FZp3Puc0HIKXOiODChaPkCqEGNvyJUQjMdiOvNdD0yx4qI/og==}
     requiresBuild: true
     dependencies:
-      '@pulumi/pulumi': 3.40.1
+      '@pulumi/pulumi': 3.50.0
       aws-sdk: 2.950.0
       builtin-modules: 3.0.0
       mime: 2.5.2
@@ -238,19 +224,9 @@ packages:
     dependencies:
       '@pulumi/aws': 5.24.0
       '@pulumi/docker': 3.6.1
-      '@pulumi/pulumi': 3.40.1
+      '@pulumi/pulumi': 3.50.0
       '@types/aws-lambda': 8.10.79
       mime: 2.5.2
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
-  /@pulumi/docker/3.4.1:
-    resolution: {integrity: sha512-SOZ7Cz6JrUnbTbOrwL5tuiGnFq3IIvGQqZnksIoPuJAjEKYB1bsc3EUtrLVLlLYKQAP/vML0YQVY6BWYXoidtg==}
-    requiresBuild: true
-    dependencies:
-      '@pulumi/pulumi': 3.40.1
-      semver: 5.7.1
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -259,14 +235,14 @@ packages:
     resolution: {integrity: sha512-BZME50QkT556v+LvmTXPT8ssB2xxNkp9+msB5xYFEnUnWcdGAx5yUysQw70RJCb+U0GbkJSbxtlgMJgOQf/now==}
     requiresBuild: true
     dependencies:
-      '@pulumi/pulumi': 3.40.1
+      '@pulumi/pulumi': 3.50.0
       semver: 5.7.1
     transitivePeerDependencies:
       - supports-color
     dev: false
 
-  /@pulumi/pulumi/3.40.1:
-    resolution: {integrity: sha512-QKAmf8uAtPDvWo8000oWfy2iCN+NjshrS9u5tOuKzQ0oG76CWI4OjKeiPL5Z04MSP5uP0UuKM4/LAEWfKwWvaA==}
+  /@pulumi/pulumi/3.50.0:
+    resolution: {integrity: sha512-i8tltLcknWyRZWQEbNLGMLydshw1d/jcfeUHT4Bc0nQVPi8WklCiFwBGfjiWRpqvVCt0osqydxnt6F+zOTm+kw==}
     engines: {node: '>=8.13.0 || >=10.10.0'}
     dependencies:
       '@grpc/grpc-js': 1.3.8
@@ -304,7 +280,7 @@ packages:
     resolution: {integrity: sha512-XDQ2OV+VW5Bpn9nxVqsEiKD3DAEeMd8ngZPLpioJWCiHzsBMSrYfP97MkdGDaBsDvS6/NL1Bvk0VQXXooFl3Yw==}
     requiresBuild: true
     dependencies:
-      '@pulumi/pulumi': 3.40.1
+      '@pulumi/pulumi': 3.50.0
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -313,7 +289,7 @@ packages:
     resolution: {integrity: sha512-XSSQy69s4FNyhfllig2tvo3p3e5MH0xvB9jm53FfbitaJm7NzJLfM/RxMEbu+Ys9CdnrTrbJLl22GmGHASCCng==}
     requiresBuild: true
     dependencies:
-      '@pulumi/pulumi': 3.40.1
+      '@pulumi/pulumi': 3.50.0
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -738,7 +714,7 @@ packages:
     dev: false
 
   /jmespath/0.15.0:
-    resolution: {integrity: sha512-+kHj8HXArPfpPEKGLZ+kB5ONRTCiGQXo8RQYL0hH8t6pWXUBBK5KkkQmTNOwKK4LEsd0yTsgtjJVm4UBSZea4w==}
+    resolution: {integrity: sha1-o/Iiqarp+Wb10nx5ZRDigJF2Qhc=}
     engines: {node: '>= 0.6.0'}
     dev: false
 
@@ -940,7 +916,7 @@ packages:
     dev: false
 
   /querystring/0.2.0:
-    resolution: {integrity: sha512-X/xY82scca2tau62i9mDyU9K+I+djTMUsvwf7xnUX5GLvVzgJybOJf4Y6o9Zx3oJK/LSXg5tTZBjwzqVPaPO2g==}
+    resolution: {integrity: sha1-sgmEkgO7Jd+CDadW50cAWHhSFiA=}
     engines: {node: '>=0.4.x'}
     deprecated: The querystring API is considered Legacy. new code should use the URLSearchParams API instead.
     dev: false
@@ -965,6 +941,7 @@ packages:
 
   /readdir-scoped-modules/1.1.0:
     resolution: {integrity: sha512-asaikDeqAQg7JifRsZn1NJZXo9E+VwlyCfbkZhwyISinqk5zNS6266HS5kah6P0SaQKGF6SkNnZVHUzHFYxYDw==}
+    deprecated: This functionality has been moved to @npmcli/fs
     dependencies:
       debuglog: 1.0.1
       dezalgo: 1.0.3
@@ -986,13 +963,6 @@ packages:
       resolve: 1.22.1
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  /resolve/1.20.0:
-    resolution: {integrity: sha512-wENBPt4ySzg4ybFQW2TT1zMQucPK95HSh/nq2CFTZVOGut2+pQvSsgtda4d26YrYcr067wjbmzOG8byDPBX63A==}
-    dependencies:
-      is-core-module: 2.10.0
-      path-parse: 1.0.7
     dev: false
 
   /resolve/1.22.1:
