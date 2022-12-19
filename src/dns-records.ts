@@ -34,9 +34,7 @@ if (mailProvider === 'gmail') {
             records: ['ghs.google.com'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -49,9 +47,7 @@ if (mailProvider === 'gmail') {
             records: ['ghs.google.com'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -64,9 +60,7 @@ if (mailProvider === 'gmail') {
             records: ['ghs.google.com'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -85,9 +79,7 @@ if (mailProvider === 'gmail') {
             ],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     // see also TXT record
@@ -101,9 +93,7 @@ if (mailProvider === 'gmail') {
             records: ['v=spf1 include:_spf.google.com ~all'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -118,9 +108,7 @@ if (mailProvider === 'gmail') {
             ],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -135,9 +123,7 @@ if (mailProvider === 'gmail') {
             ],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -155,9 +141,7 @@ if (mailProvider === 'gmail') {
                 '10	ALT4.ASPMX.L.GOOGLE.COM.',
             ],
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -169,9 +153,7 @@ if (mailProvider === 'gmail') {
             ttl: 300,
             records: ['v=spf1 include:_spf.google.com ~all'],
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -189,9 +171,7 @@ if (mailProvider === 'gmail') {
                 '10	ALT4.ASPMX.L.GOOGLE.COM.',
             ],
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -207,9 +187,7 @@ if (mailProvider === 'gmail') {
                 ),
             ],
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -225,9 +203,7 @@ if (mailProvider === 'gmail') {
                 ),
             ],
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -239,9 +215,7 @@ if (mailProvider === 'gmail') {
             ttl: 3600,
             records: ['v=spf1 include:_spf.google.com ~all'],
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 } else if (mailProvider === 'icloud') {
     // see also TXT apple-domain
@@ -256,9 +230,7 @@ if (mailProvider === 'gmail') {
             records: ['10 mx01.mail.icloud.com.', '10 mx02.mail.icloud.com.'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     // see also TXT record
@@ -272,9 +244,7 @@ if (mailProvider === 'gmail') {
             records: ['v=spf1 include:icloud.com ~all'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -289,9 +259,7 @@ if (mailProvider === 'gmail') {
             ],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -304,9 +272,7 @@ if (mailProvider === 'gmail') {
             records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -319,9 +285,7 @@ if (mailProvider === 'gmail') {
             records: ['10 mx01.mail.icloud.com.', '10 mx02.mail.icloud.com.'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -334,9 +298,7 @@ if (mailProvider === 'gmail') {
             records: ['v=spf1 include:icloud.com ~all'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -352,9 +314,7 @@ if (mailProvider === 'gmail') {
             ],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 
     new aws.route53.Record(
@@ -367,9 +327,7 @@ if (mailProvider === 'gmail') {
             records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
             allowOverwrite: true,
         },
-        {
-            deleteBeforeReplace: true,
-        },
+        { deleteBeforeReplace: true },
     )
 }
 
