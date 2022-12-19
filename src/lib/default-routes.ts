@@ -1,4 +1,4 @@
-import * as awsx from '@pulumi/awsx'
+import * as awsx from '@pulumi/awsx/classic'
 import * as pulumi from '@pulumi/pulumi'
 
 export class DefaultRoutes extends pulumi.ComponentResource {
