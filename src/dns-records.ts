@@ -18,12 +18,47 @@ const mailConfig = new pulumi.Config('mail')
 
 const mailProvider = mailConfig.get<string>('provider') as 'gmail' | 'icloud'
 
+const zoneId = {
+    'bennettp123.com': 'Z36Q6VQY8AKSB2',
+    'home.bennettp123.com': 'Z1LNE5PQ9LO13V',
+}
+
 if (mailProvider === 'gmail') {
     new aws.route53.Record(
         'mail-cname',
         {
             name: 'mail.bennettp123.com',
-            zoneId: 'Z36Q6VQY8AKSB2',
+            zoneId: zoneId['bennettp123.com'],
+            type: 'CNAME',
+            ttl: 300,
+            records: ['ghs.google.com'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'calendar-cname',
+        {
+            name: 'calendar.bennettp123.com',
+            zoneId: zoneId['bennettp123.com'],
+            type: 'CNAME',
+            ttl: 300,
+            records: ['ghs.google.com'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'docs-cname',
+        {
+            name: 'docs.bennettp123.com',
+            zoneId: zoneId['bennettp123.com'],
             type: 'CNAME',
             ttl: 300,
             records: ['ghs.google.com'],
@@ -38,7 +73,7 @@ if (mailProvider === 'gmail') {
         'mx',
         {
             name: 'bennettp123.com',
-            zoneId: 'Z36Q6VQY8AKSB2',
+            zoneId: zoneId['bennettp123.com'],
             type: 'MX',
             ttl: 300,
             records: [
@@ -60,7 +95,7 @@ if (mailProvider === 'gmail') {
         'spf',
         {
             name: 'bennettp123.com',
-            zoneId: 'Z36Q6VQY8AKSB2',
+            zoneId: zoneId['bennettp123.com'],
             type: 'SPF',
             ttl: 300,
             records: ['v=spf1 include:_spf.google.com ~all'],
@@ -72,10 +107,27 @@ if (mailProvider === 'gmail') {
     )
 
     new aws.route53.Record(
+        'dmarc',
+        {
+            name: '_dmarc.bennettp123.com',
+            zoneId: zoneId['bennettp123.com'],
+            type: 'TXT',
+            ttl: 300,
+            records: [
+                'v=DMARC1; p=quarantine; rua=mailto:monitor@bennettp123.com; fo=0; adkim=s; aspf=s; pct=100; rf=afrf; sp=quarantine',
+            ],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
         'dkim',
         {
             name: 'google._domainkey.bennettp123.com',
-            zoneId: 'Z36Q6VQY8AKSB2',
+            zoneId: zoneId['bennettp123.com'],
             type: 'TXT',
             ttl: 300,
             records: [
@@ -94,10 +146,43 @@ if (mailProvider === 'gmail') {
         'mx',
         {
             name: 'bennettp123.com',
-            zoneId: 'Z36Q6VQY8AKSB2',
+            zoneId: zoneId['bennettp123.com'],
             type: 'MX',
             ttl: 300,
             records: ['10 mx01.mail.icloud.com.', '10 mx02.mail.icloud.com.'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    // see also TXT record
+    new aws.route53.Record(
+        'spf',
+        {
+            name: 'bennettp123.com',
+            zoneId: zoneId['bennettp123.com'],
+            type: 'SPF',
+            ttl: 300,
+            records: ['v=spf1 include:icloud.com ~all'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'dmarc',
+        {
+            name: '_dmarc.bennettp123.com',
+            zoneId: zoneId['bennettp123.com'],
+            type: 'TXT',
+            ttl: 300,
+            records: [
+                'v=DMARC1; p=quarantine; rua=mailto:monitor@bennettp123.com; fo=0; adkim=s; aspf=s; pct=100; rf=afrf; sp=quarantine',
+            ],
             allowOverwrite: true,
         },
         {
@@ -109,7 +194,7 @@ if (mailProvider === 'gmail') {
         'icloud-dkim',
         {
             name: 'sig1._domainkey.bennettp123.com',
-            zoneId: 'Z36Q6VQY8AKSB2',
+            zoneId: zoneId['bennettp123.com'],
             type: 'CNAME',
             ttl: 300,
             records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
@@ -127,8 +212,8 @@ new aws.route53.Record(
     'txt',
     {
         name: 'bennettp123.com',
-        zoneId: 'Z36Q6VQY8AKSB2',
-        type: 'SPF',
+        zoneId: zoneId['bennettp123.com'],
+        type: 'TXT',
         ttl: 300,
         records: [
             'have-i-been-pwned-verification=0bc748e2c70d2194bda98bf27a9c720a',
@@ -154,7 +239,7 @@ new aws.route53.Record(
     {
         name: 'usg.home.bennettp123.com',
         type: 'AAAA',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['2404:bf40:e402:1::1'],
     },
@@ -168,7 +253,7 @@ new aws.route53.Record(
     {
         name: 'usg.home.bennettp123.com',
         type: 'A',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['210.10.212.154'],
     },
@@ -182,7 +267,7 @@ new aws.route53.Record(
     {
         name: 'udm.home.bennettp123.com',
         type: 'AAAA',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['2404:bf40:e402:1::1'],
     },
@@ -196,7 +281,7 @@ new aws.route53.Record(
     {
         name: 'udm.home.bennettp123.com',
         type: 'A',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['210.10.212.154'],
     },
@@ -210,7 +295,7 @@ new aws.route53.Record(
     {
         name: 'udm-ext.home.bennettp123.com',
         type: 'AAAA',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['2001:c78:1300:1a::2'],
     },
@@ -224,7 +309,7 @@ new aws.route53.Record(
     {
         name: 'udm-ext.home.bennettp123.com',
         type: 'A',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['210.10.212.154'],
     },
@@ -238,7 +323,7 @@ new aws.route53.Record(
     {
         name: 'homebridge.home.bennettp123.com',
         type: 'AAAA',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['2404:bf40:e402:33:586a:d587:9e99:4252'],
     },
@@ -252,7 +337,7 @@ new aws.route53.Record(
     {
         name: 'homebridge.home.bennettp123.com',
         type: 'A',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['192.168.33.127'],
     },
@@ -266,7 +351,7 @@ new aws.route53.Record(
     {
         name: 'home.bennettp123.com',
         type: 'MX',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: [
             '1	ASPMX.L.GOOGLE.COM.',
@@ -286,7 +371,7 @@ new aws.route53.Record(
     {
         name: 'homebridge.home.bennettp123.com',
         type: 'MX',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: [
             '1	ASPMX.L.GOOGLE.COM.',
@@ -306,7 +391,7 @@ new aws.route53.Record(
     {
         name: 'google._domainkey.home.bennettp123.com',
         type: 'TXT',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: [
             txtRecord(
@@ -324,7 +409,7 @@ new aws.route53.Record(
     {
         name: 'home.bennettp123.com',
         type: 'TXT',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 3600,
         records: ['v=spf1 include:_spf.google.com ~all'],
     },
@@ -338,7 +423,7 @@ new aws.route53.Record(
     {
         name: 'google._domainkey.homebridge.home.bennettp123.com',
         type: 'TXT',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: [
             txtRecord(
@@ -356,7 +441,7 @@ new aws.route53.Record(
     {
         name: 'homebridge.home.bennettp123.com',
         type: 'TXT',
-        zoneId: 'Z1LNE5PQ9LO13V',
+        zoneId: zoneId['home.bennettp123.com'],
         ttl: 3600,
         records: ['v=spf1 include:_spf.google.com ~all'],
     },
