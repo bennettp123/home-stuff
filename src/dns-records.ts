@@ -139,6 +139,110 @@ if (mailProvider === 'gmail') {
             deleteBeforeReplace: true,
         },
     )
+
+    new aws.route53.Record(
+        'home-mx',
+        {
+            name: 'home.bennettp123.com',
+            type: 'MX',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: [
+                '1	ASPMX.L.GOOGLE.COM.',
+                '5	ALT1.ASPMX.L.GOOGLE.COM.',
+                '5	ALT2.ASPMX.L.GOOGLE.COM.',
+                '10	ALT3.ASPMX.L.GOOGLE.COM.',
+                '10	ALT4.ASPMX.L.GOOGLE.COM.',
+            ],
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'home-txt',
+        {
+            name: 'home.bennettp123.com',
+            type: 'TXT',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: ['v=spf1 include:_spf.google.com ~all'],
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'homebridge-mx',
+        {
+            name: 'homebridge.home.bennettp123.com',
+            type: 'MX',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: [
+                '1	ASPMX.L.GOOGLE.COM.',
+                '5	ALT1.ASPMX.L.GOOGLE.COM.',
+                '5	ALT2.ASPMX.L.GOOGLE.COM.',
+                '10	ALT3.ASPMX.L.GOOGLE.COM.',
+                '10	ALT4.ASPMX.L.GOOGLE.COM.',
+            ],
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'home-dkim',
+        {
+            name: 'google._domainkey.home.bennettp123.com',
+            type: 'TXT',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: [
+                txtRecord(
+                    'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtS3YmDrHqPgVTWiA8SfCR+NIc2kMvLvSf31mTsrT3m1kGNnn+R7Fxecpl9gnsEiRDA/ElnCNoDJCyjdWzwKn0EcvzTdjvtAWk4pz6tmqK1+aQdRzrmzhYNeFP9biQWq51CmdTVXVB6p1Fr+STsG3/bTe+zubO4iLgNltGslBXEboTeeN6xsbA58ElJDGaG+Iwuw1Wcmia5qpZwKqDO7pSVD8ujBpksgutCSr6N3nBQM90wDQXONm8oAFz6OD/vbR5ljvk2WMuPlOHSWXa4oaP8WlbyGrYJpn1rXzkyiOuSd0wdl3TQ5sssSR0KJsxjzdqFmydhBe1Osyxs+GGeQwtwIDAQAB',
+                ),
+            ],
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'homebridge-dkim',
+        {
+            name: 'google._domainkey.homebridge.home.bennettp123.com',
+            type: 'TXT',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: [
+                txtRecord(
+                    'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs/mHQw09RPT0UajBcbmCTztXOtqN2fN7zLk1HB0TAGNTg9+l60tyihnvJx/uzxChptfJkLS9A2+idFw7uD4IHzk0oPFId8j4ElJepdNLIEMS1DlBT//HsisNUF2IQbF/56wk/HWoogmKoyBmXCSluTEf4CP61L+zB/apgdsq80sPM+9Dsqk8EJTw6Fnx8ElR6L5AGyeNzyew7n0k2cDhlEkNGMdsM7pHflqOj0+45lStgFREUz+8JSE5OA3gX9kFC/fNRi0FTMYoAWUKhvfM2XTT7VTFrc/RCSb5eT5giqofhwRrwmVso26XKozulBaPWIKtnow1/3kWGEjG39kw7wIDAQAB',
+                ),
+            ],
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'homebridge-spf',
+        {
+            name: 'homebridge.home.bennettp123.com',
+            type: 'TXT',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 3600,
+            records: ['v=spf1 include:_spf.google.com ~all'],
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
 } else if (mailProvider === 'icloud') {
     // see also TXT apple-domain
 
@@ -195,6 +299,69 @@ if (mailProvider === 'gmail') {
         {
             name: 'sig1._domainkey.bennettp123.com',
             zoneId: zoneId['bennettp123.com'],
+            type: 'CNAME',
+            ttl: 300,
+            records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'home-mx',
+        {
+            name: 'home.bennettp123.com',
+            zoneId: zoneId['home.bennettp123.com'],
+            type: 'MX',
+            ttl: 300,
+            records: ['10 mx01.mail.icloud.com.', '10 mx02.mail.icloud.com.'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'home-spf',
+        {
+            name: 'home.bennettp123.com',
+            type: 'SPF',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: ['v=spf1 include:icloud.com ~all'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'home-txt',
+        {
+            name: 'home.bennettp123.com',
+            type: 'TXT',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: [
+                'apple-domain=IhTjpTMY4tZeVzPU',
+                'v=spf1 include:icloud.com ~all',
+            ],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'home-dkim',
+        {
+            name: 'sig1._domainkey.home.bennettp123.com',
+            zoneId: zoneId['home.bennettp123.com'],
             type: 'CNAME',
             ttl: 300,
             records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
@@ -340,110 +507,6 @@ new aws.route53.Record(
         zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
         records: ['192.168.33.127'],
-    },
-    {
-        deleteBeforeReplace: true,
-    },
-)
-
-new aws.route53.Record(
-    'home-mx',
-    {
-        name: 'home.bennettp123.com',
-        type: 'MX',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 300,
-        records: [
-            '1	ASPMX.L.GOOGLE.COM.',
-            '5	ALT1.ASPMX.L.GOOGLE.COM.',
-            '5	ALT2.ASPMX.L.GOOGLE.COM.',
-            '10	ALT3.ASPMX.L.GOOGLE.COM.',
-            '10	ALT4.ASPMX.L.GOOGLE.COM.',
-        ],
-    },
-    {
-        deleteBeforeReplace: true,
-    },
-)
-
-new aws.route53.Record(
-    'homebridge-mx',
-    {
-        name: 'homebridge.home.bennettp123.com',
-        type: 'MX',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 300,
-        records: [
-            '1	ASPMX.L.GOOGLE.COM.',
-            '5	ALT1.ASPMX.L.GOOGLE.COM.',
-            '5	ALT2.ASPMX.L.GOOGLE.COM.',
-            '10	ALT3.ASPMX.L.GOOGLE.COM.',
-            '10	ALT4.ASPMX.L.GOOGLE.COM.',
-        ],
-    },
-    {
-        deleteBeforeReplace: true,
-    },
-)
-
-new aws.route53.Record(
-    'home-dkim',
-    {
-        name: 'google._domainkey.home.bennettp123.com',
-        type: 'TXT',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 300,
-        records: [
-            txtRecord(
-                'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtS3YmDrHqPgVTWiA8SfCR+NIc2kMvLvSf31mTsrT3m1kGNnn+R7Fxecpl9gnsEiRDA/ElnCNoDJCyjdWzwKn0EcvzTdjvtAWk4pz6tmqK1+aQdRzrmzhYNeFP9biQWq51CmdTVXVB6p1Fr+STsG3/bTe+zubO4iLgNltGslBXEboTeeN6xsbA58ElJDGaG+Iwuw1Wcmia5qpZwKqDO7pSVD8ujBpksgutCSr6N3nBQM90wDQXONm8oAFz6OD/vbR5ljvk2WMuPlOHSWXa4oaP8WlbyGrYJpn1rXzkyiOuSd0wdl3TQ5sssSR0KJsxjzdqFmydhBe1Osyxs+GGeQwtwIDAQAB',
-            ),
-        ],
-    },
-    {
-        deleteBeforeReplace: true,
-    },
-)
-
-new aws.route53.Record(
-    'home-spf',
-    {
-        name: 'home.bennettp123.com',
-        type: 'TXT',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 3600,
-        records: ['v=spf1 include:_spf.google.com ~all'],
-    },
-    {
-        deleteBeforeReplace: true,
-    },
-)
-
-new aws.route53.Record(
-    'homebridge-dkim',
-    {
-        name: 'google._domainkey.homebridge.home.bennettp123.com',
-        type: 'TXT',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 300,
-        records: [
-            txtRecord(
-                'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs/mHQw09RPT0UajBcbmCTztXOtqN2fN7zLk1HB0TAGNTg9+l60tyihnvJx/uzxChptfJkLS9A2+idFw7uD4IHzk0oPFId8j4ElJepdNLIEMS1DlBT//HsisNUF2IQbF/56wk/HWoogmKoyBmXCSluTEf4CP61L+zB/apgdsq80sPM+9Dsqk8EJTw6Fnx8ElR6L5AGyeNzyew7n0k2cDhlEkNGMdsM7pHflqOj0+45lStgFREUz+8JSE5OA3gX9kFC/fNRi0FTMYoAWUKhvfM2XTT7VTFrc/RCSb5eT5giqofhwRrwmVso26XKozulBaPWIKtnow1/3kWGEjG39kw7wIDAQAB',
-            ),
-        ],
-    },
-    {
-        deleteBeforeReplace: true,
-    },
-)
-
-new aws.route53.Record(
-    'homebridge-spf',
-    {
-        name: 'homebridge.home.bennettp123.com',
-        type: 'TXT',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 3600,
-        records: ['v=spf1 include:_spf.google.com ~all'],
     },
     {
         deleteBeforeReplace: true,
