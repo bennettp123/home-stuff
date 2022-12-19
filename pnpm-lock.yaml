@@ -2,7 +2,7 @@ lockfileVersion: 5.4
 
 specifiers:
   '@pulumi/aws': ^5.14.0
-  '@pulumi/aws-native': ^0.44.0
+  '@pulumi/aws-native': ^0.45.0
   '@pulumi/awsx': ^0.40.0
   '@pulumi/docker': ^3.4.1
   '@pulumi/pulumi': ^3.40.1
@@ -17,7 +17,7 @@ specifiers:
 
 dependencies:
   '@pulumi/aws': 5.14.0
-  '@pulumi/aws-native': 0.44.0
+  '@pulumi/aws-native': 0.45.0
   '@pulumi/awsx': 0.40.0_gvkeja4spky5z6mbwfm5m2obae
   '@pulumi/docker': 3.4.1
   '@pulumi/pulumi': 3.40.1
@@ -187,8 +187,8 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /@pulumi/aws-native/0.44.0:
-    resolution: {integrity: sha512-fWaKKFa6G4NnEbD9qqRaSiD00PWKfgUmmP9ofSUIkn87419OYAfxomz+zDBAnmjgCa2JYh1JLhTo/PFruViz1Q==}
+  /@pulumi/aws-native/0.45.0:
+    resolution: {integrity: sha512-PegEOix3vDJ7bH4dEz9snsb621clfkdv40LYRc0MTFnuBd2v/W6ZyJG4Ki1dk6Zn1NIsHKzFDKkRcrG9K9X8Lg==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.40.1
