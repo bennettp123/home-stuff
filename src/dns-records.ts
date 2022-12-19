@@ -1,4 +1,5 @@
 import * as aws from '@pulumi/aws'
+import * as pulumi from '@pulumi/pulumi'
 
 /**
  * See https://serverfault.com/a/954501
@@ -12,6 +13,141 @@ import * as aws from '@pulumi/aws'
 export function txtRecord(s: string) {
     return (s.match(/.{1,255}/g) ?? []).map((entry) => entry ?? '').join('" "')
 }
+
+const mailConfig = new pulumi.Config('mail')
+
+const mailProvider = mailConfig.get<string>('provider') as 'gmail' | 'icloud'
+
+if (mailProvider === 'gmail') {
+    new aws.route53.Record(
+        'mail-cname',
+        {
+            name: 'mail.bennettp123.com',
+            zoneId: 'Z36Q6VQY8AKSB2',
+            type: 'CNAME',
+            ttl: 300,
+            records: ['ghs.google.com'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'mx',
+        {
+            name: 'bennettp123.com',
+            zoneId: 'Z36Q6VQY8AKSB2',
+            type: 'MX',
+            ttl: 300,
+            records: [
+                '1  aspmx.l.google.com.',
+                '5  alt1.aspmx.l.google.com.',
+                '5  alt2.aspmx.l.google.com.',
+                '10 aspmx2.googlemail.com.',
+                '10 aspmx3.googlemail.com.',
+            ],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    // see also TXT record
+    new aws.route53.Record(
+        'spf',
+        {
+            name: 'bennettp123.com',
+            zoneId: 'Z36Q6VQY8AKSB2',
+            type: 'SPF',
+            ttl: 300,
+            records: ['v=spf1 include:_spf.google.com ~all'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'dkim',
+        {
+            name: 'google._domainkey.bennettp123.com',
+            zoneId: 'Z36Q6VQY8AKSB2',
+            type: 'TXT',
+            ttl: 300,
+            records: [
+                'v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCaszIojAOVVhyOIWDiVKggvAaocGaLsFz8dFAB4c+fIUOCFd5ABSvDaxkL+ShAmT9mbPTPyHoRrM3CpXhjbsCnh7fA1TACDSVV4GMbXgyWkwW2fqZkLbxHx7/9Oi098ts6asGPlyeSrOmbOqvgntLwdQDMPXPmv1t0E3JMZ1KUkwIDAQAB',
+            ],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+} else if (mailProvider === 'icloud') {
+    // see also TXT apple-domain
+
+    new aws.route53.Record(
+        'mx',
+        {
+            name: 'bennettp123.com',
+            zoneId: 'Z36Q6VQY8AKSB2',
+            type: 'MX',
+            ttl: 300,
+            records: ['10 mx01.mail.icloud.com.', '10 mx02.mail.icloud.com.'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+
+    new aws.route53.Record(
+        'icloud-dkim',
+        {
+            name: 'sig1._domainkey.bennettp123.com',
+            zoneId: 'Z36Q6VQY8AKSB2',
+            type: 'CNAME',
+            ttl: 300,
+            records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
+            allowOverwrite: true,
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+}
+
+// TODO import all `bennettp123.com` records
+// currently only a subset, the rest are in gitlab.com/bennettp123.com-redux
+new aws.route53.Record(
+    'txt',
+    {
+        name: 'bennettp123.com',
+        zoneId: 'Z36Q6VQY8AKSB2',
+        type: 'SPF',
+        ttl: 300,
+        records: [
+            'have-i-been-pwned-verification=0bc748e2c70d2194bda98bf27a9c720a',
+            'google-site-verification=cNbbo0Ct0uCSQTQSWILfNa_ekmVwaa_-T8cRWwfVr-8',
+            'adn_verification=bennettp123 https',
+            'apple-domain=J1zntegtGRFkr4xX',
+            ...(mailProvider === 'gmail'
+                ? ['v=spf1 include:_spf.google.com ~all']
+                : []),
+            ...(mailProvider === 'icloud'
+                ? ['v=spf1 include:icloud.com ~all']
+                : []),
+        ],
+        allowOverwrite: true,
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
 
 new aws.route53.Record(
     'usg-aaaa',

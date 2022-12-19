@@ -46,6 +46,7 @@ config:
         bennett@MacBook Pro 16
     sudoers:
     - bennett
+  mail:provider: icloud
   plex:create-s3-bucket: "false"
   plex:instance-type: a1.medium
   plex:state: offline
