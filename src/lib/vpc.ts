@@ -1,5 +1,5 @@
 import * as aws from '@pulumi/aws'
-import * as awsx from '@pulumi/awsx'
+import * as awsx from '@pulumi/awsx/classic'
 import * as pulumi from '@pulumi/pulumi'
 import { getTags } from '../helpers'
 
