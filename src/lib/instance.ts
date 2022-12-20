@@ -771,7 +771,10 @@ export class Instance extends pulumi.ComponentResource {
                   .apply(([addresses]) => addresses.join(', '))
             : instance !== undefined
             ? pulumi
-                  .all([instance.ipv6Addresses ?? [], privateIpv6])
+                  .all<string[], string>([
+                      instance.ipv6Addresses ?? [],
+                      privateIpv6,
+                  ])
                   .apply(([addresses, privateIpv6]) => {
                       if (addresses.length > 1) {
                           throw new pulumi.ResourceError(
