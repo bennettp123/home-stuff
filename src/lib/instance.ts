@@ -851,8 +851,21 @@ export class Instance extends pulumi.ComponentResource {
             this.hostname =
                 aaaa || a
                     ? pulumi
-                          .all([aaaa?.fqdn, a?.fqdn])
-                          .apply(([aaaafqdn, afqdn]) => aaaafqdn ?? afqdn)
+                          .all<string | undefined, string | undefined>([
+                              aaaa?.fqdn,
+                              a?.fqdn,
+                          ])
+                          .apply(
+                              ([aaaafqdn, afqdn]) =>
+                                  aaaafqdn ??
+                                  afqdn ??
+                                  (() => {
+                                      throw new pulumi.ResourceError(
+                                          'internal error: aaaa.fqdn or a.fqdn are both undefined',
+                                          this,
+                                      )
+                                  })(),
+                          )
                     : undefined
         }
 
