@@ -12,7 +12,7 @@ on:
 
 jobs:
   up:
-    if: github.event_name == "workflow_dispatch" || github.event_name == "schedule" || github.event.pull_request.merged == true
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true }}
     uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
     with:
       stack-name: home
