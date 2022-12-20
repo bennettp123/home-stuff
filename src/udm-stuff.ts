@@ -68,7 +68,7 @@ new aws.iam.UserPolicy('udm-certbot', {
 
 export const udm = {
     certbot: {
-        accessKeyId: pulumi.secret(certbotUser.accessKeyId),
+        accessKeyId: certbotUser.accessKeyId,
         secretAccessKey: pulumi.secret(certbotUser.secretAccessKey),
     },
 }

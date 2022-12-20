@@ -182,6 +182,6 @@ export const homebridge = {
     },
     certbot: {
         accessKeyId: certbotUser.accessKeyId,
-        secretAccessKey: certbotUser.secretAccessKey,
+        secretAccessKey: pulumi.secret(certbotUser.secretAccessKey),
     },
 }
