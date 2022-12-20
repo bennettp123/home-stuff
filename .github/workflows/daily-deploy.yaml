@@ -3,6 +3,7 @@ on:
   schedule:
     # run each day at 8am AWST
     - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   up:
