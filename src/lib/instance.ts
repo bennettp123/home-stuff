@@ -744,7 +744,7 @@ export class Instance extends pulumi.ComponentResource {
                 : eip.publicIp
         } else {
             this.ip =
-                instance !== undefined
+                instance !== undefined && privateIp !== undefined
                     ? pulumi
                           .all([
                               instance.publicIp,
