@@ -747,8 +747,8 @@ export class Instance extends pulumi.ComponentResource {
                 instance !== undefined
                     ? pulumi
                           .all([
-                              instance?.publicIp,
-                              instance?.privateIp,
+                              instance.publicIp,
+                              instance.privateIp,
                               privateIp,
                           ])
                           .apply(([publicIp, instancePrivateIp, privateIp]) =>
