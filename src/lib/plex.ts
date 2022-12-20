@@ -125,7 +125,7 @@ export class Plex extends pulumi.ComponentResource {
     /**
      * The hostname of the plex instance
      */
-    hostname: pulumi.Output<string>
+    hostname?: pulumi.Output<string>
 
     /**
      * The pulumi urn of the plex instance
@@ -426,16 +426,7 @@ export class Plex extends pulumi.ComponentResource {
 
         this.ip = instance.ip
         this.ipv6 = instance.ipv6
-        this.hostname = pulumi.output(instance.hostname).apply(
-            (hostname) =>
-                hostname ??
-                (() => {
-                    throw new pulumi.ResourceError(
-                        'gateway hostname missing!',
-                        this,
-                    )
-                })(),
-        )
+        this.hostname = instance.hostname
         this.publicIp = instance.publicIp
         this.privateIp = instance.privateIp
         this.instanceUrn = instance.instanceUrn
