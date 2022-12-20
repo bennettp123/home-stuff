@@ -1,5 +1,10 @@
-name: pulumi up (scheduled)
+name: pulumi up
 on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
   schedule:
     # run each day at 8am AWST
     - cron: '0 0 * * *'
@@ -7,6 +12,7 @@ on:
 
 jobs:
   up:
+    if: github.event_name == "workflow_dispatch" || github.event_name == "schedule" || github.event.pull_request.merged == true
     uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
     with:
       stack-name: home
