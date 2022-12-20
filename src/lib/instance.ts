@@ -265,8 +265,10 @@ export class Instance extends pulumi.ComponentResource {
     /**
      * If the instance has a public IP, then this will be the public IP.
      * Otherwise, it will be the private IP.
+     *
+     * If the instance is offline, this will be undefined.
      */
-    ip: pulumi.Output<string>
+    ip?: pulumi.Output<string>
 
     /**
      * The private IP of the instance
@@ -741,15 +743,25 @@ export class Instance extends pulumi.ComponentResource {
                 ? this.privateIp ?? eip.publicIp
                 : eip.publicIp
         } else {
-            this.ip = pulumi
-                .all([instance?.publicIp, instance?.privateIp, privateIp])
-                .apply(([publicIp, instancePrivateIp, privateIp]) =>
-                    publicIp && publicIp !== '' && !args.dns?.preferPrivateIP
-                        ? publicIp
-                        : instancePrivateIp && instancePrivateIp !== ''
-                        ? instancePrivateIp
-                        : privateIp,
-                )
+            this.ip =
+                instance !== undefined
+                    ? pulumi
+                          .all([
+                              instance?.publicIp,
+                              instance?.privateIp,
+                              privateIp,
+                          ])
+                          .apply(([publicIp, instancePrivateIp, privateIp]) =>
+                              publicIp &&
+                              publicIp !== '' &&
+                              !args.dns?.preferPrivateIP
+                                  ? publicIp
+                                  : instancePrivateIp &&
+                                    instancePrivateIp !== ''
+                                  ? instancePrivateIp
+                                  : privateIp,
+                          )
+                    : undefined
         }
 
         this.publicIp = eip ? eip.publicIp : instance?.publicIp

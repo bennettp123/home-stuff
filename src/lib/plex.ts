@@ -105,22 +105,22 @@ export class Plex extends pulumi.ComponentResource {
     /**
      * The public IP address of the plex instance.
      */
-    ip: pulumi.Output<string>
+    ip?: pulumi.Output<string>
 
     /**
      * The public IP address of the plex instance.
      */
-    publicIp: pulumi.Output<string>
+    publicIp?: pulumi.Output<string>
 
     /**
      * The private IP address of the plex instance.
      */
-    privateIp: pulumi.Output<string>
+    privateIp?: pulumi.Output<string>
 
     /**
      * The IPv6 address of the plex instance.
      */
-    ipv6: pulumi.Output<string>
+    ipv6?: pulumi.Output<string>
 
     /**
      * The hostname of the plex instance
@@ -130,7 +130,7 @@ export class Plex extends pulumi.ComponentResource {
     /**
      * The pulumi urn of the plex instance
      */
-    instanceUrn: pulumi.Output<string>
+    instanceUrn?: pulumi.Output<string>
 
     constructor(
         name: string,
@@ -206,8 +206,8 @@ export class Plex extends pulumi.ComponentResource {
                     cacheVolumeId.replace('-', ''),
                 ])
                 .apply(([plexVolumeId, cacheVolumeId]) => {
-                    const plexDevice = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${plexVolumeId}`
-                    const cacheDevice = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${cacheVolumeId}`
+                    const plexDevice: string = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${plexVolumeId}`
+                    const cacheDevice: string = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${cacheVolumeId}`
                     return {
                         ...defaultUserData,
                         timezone: 'Australia/Perth',
@@ -425,7 +425,7 @@ export class Plex extends pulumi.ComponentResource {
         }
 
         this.ip = instance.ip
-        this.ipv6 = instance.ipv6!
+        this.ipv6 = instance.ipv6
         this.hostname = pulumi.output(instance.hostname).apply(
             (hostname) =>
                 hostname ??
@@ -436,8 +436,8 @@ export class Plex extends pulumi.ComponentResource {
                     )
                 })(),
         )
-        this.publicIp = instance.publicIp!
-        this.privateIp = instance.privateIp!
-        this.instanceUrn = instance.instanceUrn!
+        this.publicIp = instance.publicIp
+        this.privateIp = instance.privateIp
+        this.instanceUrn = instance.instanceUrn
     }
 }

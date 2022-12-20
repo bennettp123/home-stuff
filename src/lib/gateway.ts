@@ -408,22 +408,78 @@ export class Gateway extends pulumi.ComponentResource {
             { parent: this },
         )
 
-        this.ip = instance.ip!
-        this.ipv6 = instance.ipv6!
+        this.ip =
+            instance.ip ??
+            (() => {
+                throw new pulumi.ResourceError(
+                    'internal error: gateway instance.ip is undefined',
+                    this,
+                )
+            })()
+
+        this.ipv6 =
+            instance.ipv6 ??
+            (() => {
+                throw new pulumi.ResourceError(
+                    'internal error: gateway instance.ipv6 is undefined',
+                    this,
+                )
+            })()
+
         this.hostname = pulumi.output(instance.hostname).apply(
             (hostname) =>
                 hostname ??
                 (() => {
                     throw new pulumi.ResourceError(
-                        'gateway hostname missing!',
+                        'internal error: gateway instance.hostname is undefined',
                         this,
                     )
                 })(),
         )
-        this.instanceId = instance.instanceId!
-        this.interfaceId = instance.interfaceId!
-        this.publicIp = instance.publicIp!
-        this.privateIp = instance.privateIp!
-        this.instanceUrn = instance.instanceUrn!
+
+        this.instanceId =
+            instance.instanceId ??
+            (() => {
+                throw new pulumi.ResourceError(
+                    'internal error: gateway instance.instanceId is undefined',
+                    this,
+                )
+            })()
+
+        this.interfaceId =
+            instance.interfaceId ??
+            (() => {
+                throw new pulumi.ResourceError(
+                    'internal error: gateway instance.interfaceId is undefined',
+                    this,
+                )
+            })()
+
+        this.publicIp =
+            instance.publicIp ??
+            (() => {
+                throw new pulumi.ResourceError(
+                    'internal error: gateway instance.publicIp is undefined',
+                    this,
+                )
+            })()
+
+        this.privateIp =
+            instance.privateIp ??
+            (() => {
+                throw new pulumi.ResourceError(
+                    'internal error: gateway instance.privateIp is undefined',
+                    this,
+                )
+            })()
+
+        this.instanceUrn =
+            instance.instanceUrn ??
+            (() => {
+                throw new pulumi.ResourceError(
+                    'internal error: gateway instance.instanceUrn is undefined',
+                    this,
+                )
+            })()
     }
 }
