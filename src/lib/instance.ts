@@ -771,20 +771,30 @@ export class Instance extends pulumi.ComponentResource {
                   .apply(([addresses]) => addresses.join(', '))
             : instance !== undefined
             ? pulumi
-                  .all<string[], string>([
+                  .all<string[], string | undefined>([
                       instance.ipv6Addresses ?? [],
                       privateIpv6,
                   ])
                   .apply(([addresses, privateIpv6]) => {
-                      if (addresses.length > 1) {
+                      if (addresses?.length ?? 0 > 1) {
                           throw new pulumi.ResourceError(
                               'too many IPv6s!',
                               this,
                           )
                       }
-                      if (addresses.length === 1) {
+                      if (addresses?.length === 1) {
                           return addresses[0]
                       }
+
+                      // unless I'm mistaken, this should be unreachable
+                      // -- required to prevent type errors
+                      if (privateIpv6 === undefined) {
+                          throw new pulumi.ResourceError(
+                              'internal error: privateIpv6 is undefined',
+                              this,
+                          )
+                      }
+
                       return privateIpv6
                   })
             : undefined
