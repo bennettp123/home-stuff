@@ -98,6 +98,7 @@ Finally, the secret needs to be set in the unifi network settings, in the VPN se
 ## Known issues
 
 -   The private subnet has access to the IPv4 internet via the gateway instance. This is because I don't want to pay extra for an NAT gateways. This is likely to cause performance and reliability issues. IPv6 is unaffected.
--   The unifi gateway doesn't support IPv6 over VPN. This means that IPv4 access works fine.
+-   The unifi gateway doesn't support IPv6 over VPN. IPv4 access works fine.
+-   Site-to-site IPv4 traffic is routed over the VPN, while site-to-site IPv6 is routed over the public internet (see above).
 -   The pulumi config defines its own state bucket and AWS key. This is a circular dependency. Future me will probably find this confusing, but that's their problem.
 -   Amazon Linux doesn't seem to support the "new" SSH private key format for RSA keys, and expects the private key to be in PEM format. The RSA private key should start with `-----BEGIN RSA PRIVATE KEY-----`
