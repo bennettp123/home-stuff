@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - deploy-pr-switch-to-push
   schedule:
     # run each day at 8am AWST
     - cron: '0 0 * * *'
