@@ -1,21 +1,35 @@
 name: pulumi up
 on:
-  pull_request:
+  push:
     branches:
       - main
-    types:
-      - closed
   schedule:
     # run each day at 8am AWST
     - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
+  get-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jwalton/gh-find-current-pr@v1
+        id: pr
+        with:
+          state: all
+      - # TODO handle no PR_NUMBER returned above
+        run: |
+          PR_NUMBER='${{ steps.pr.outputs.pr }}'
+          echo "PR_NUMBER=${PR_NUMBER}" >> "${GITHUB_ENV}"
+    outputs:
+      pr-number: ${{ env.PR_NUMBER }}
   up:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true }}
+    needs: get-pr
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true || github.event_name == 'push' }}
+    # TODO switch back to pulumi/actions@v3
     uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
     with:
       stack-name: home
+      pull-request-number: ${{ needs.get-pr.outputs.pr-number }}
       AWS_REGION: ap-southeast-2
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
