@@ -55,3 +55,8 @@ config:
     secure: v1:rMP8RD5qc50FUOzN:3J+ef7lxYXOJ32S9CbFMSV/inrOIpIUNF1ALlyJCEfWDTuFEcRwrfx2xw4TO74mdBhRC+NyD9UWOue94D0FQyyUshQ96CDklZbK1MUpKbO4kroxZBPfMMzzPDu1mkxFyaw==
   plex:wasabi-url: https://s3.us-west-1.wasabisys.com
   ssm-automations:enable-automations: "true"
+  unifi:allowInsecure: "true"
+  unifi:api_url: https://192.168.1.1
+  unifi:password:
+    secure: v1:6sHbd6sF9X6P3Iq7:8iJFDFnwtrAQatuRravUuzm+mq4VGCWG8/O6Bf0Y4BE1P/Q=
+  unifi:username: pulumi-bot
