@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - deploy-pr-switch-to-push
   schedule:
     # run each day at 8am AWST
     - cron: '0 0 * * *'
@@ -26,7 +25,8 @@ jobs:
   up:
     needs: get-pr
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true || github.event_name == 'push' }}
-    uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@deploy-pr-switch-to-push
+    # TODO switch back to pulumi/actions@v3
+    uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
     with:
       stack-name: home
       pull-request-number: ${{ needs.get-pr.outputs.pr-number }}
