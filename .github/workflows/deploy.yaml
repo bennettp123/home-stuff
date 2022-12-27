@@ -4,6 +4,9 @@ on:
       stack-name:
         required: true
         type: string
+      pull-request-number:
+        required: false
+        type: string
       AWS_REGION:
         required: true
         type: string
@@ -37,10 +40,10 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-region: ${{ inputs.AWS_REGION }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - uses: pulumi/actions@v3
+      - uses: bennettp123/actions@test/fix/comment-on-pr-number-ignored-unless-event-type-is-pullrequest
         with:
           command: up
           stack-name: ${{ inputs.stack-name }}
           cloud-url: s3://home-stuff-bennettp123
-          comment-on-pr: true
+          comment-on-pr-number: ${{ inputs.pull-request-number }}
           edit-pr-comment: false
