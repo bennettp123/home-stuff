@@ -11,7 +11,7 @@ on:
 
 jobs:
   get-pr:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     steps:
       - uses: jwalton/gh-find-current-pr@v1
         id: pr
