@@ -18,6 +18,7 @@ import { SsmAutomations } from './lib/ssm-automations'
 import { Vpc } from './lib/vpc'
 import { providers } from './providers'
 import './pulumi-state'
+import './unifi-stuff'
 export { homebridge } from './homebridge-stuff'
 export { udm } from './udm-stuff'
 
