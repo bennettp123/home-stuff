@@ -9,18 +9,26 @@ on:
   workflow_dispatch:
 
 jobs:
+  pr:
+  steps:
+    - uses: jwalton/gh-find-current-pr@v1
+      id: get-pr
+      with:
+        state: all
+    - # TODO handle no PR_NUMBER returned above
+      run: |
+        PR_NUMBER='${{ steps.pr.outputs.pr }}'
+        echo "pr-number=${PR_NUMBER}" >> "${GITHUB_ENV}"
+  outputs:
+    pr: ${{ env.PR_NUMBER }}
   up:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true }}
-    steps:
-      - uses: jwalton/gh-find-current-pr@v1
-        id: pr
-        with:
-          state: all
-      - uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
-        with:
-          stack-name: home
-          pull-request-number: ${{ steps.pr.outputs.pr }}
-          AWS_REGION: ap-southeast-2
-        secrets:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    needs: get-pr
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true || github.event_name == 'push' }}
+    uses: bennettp123/home-stuff/.github/workflows/deploy.yaml@main
+    with:
+      stack-name: home
+      pull-request-number: ${{ needs.pr.outputs.get-pr }}
+      AWS_REGION: ap-southeast-2
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
