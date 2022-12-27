@@ -20,7 +20,7 @@ jobs:
       - # TODO handle no PR_NUMBER returned above
         run: |
           PR_NUMBER='${{ steps.pr.outputs.pr }}'
-          echo "pr-number=${PR_NUMBER}" >> "${GITHUB_ENV}"
+          echo "PR_NUMBER=${PR_NUMBER}" >> "${GITHUB_ENV}"
     outputs:
       pr-number: ${{ env.PR_NUMBER }}
   up:
