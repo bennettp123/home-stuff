@@ -10,17 +10,17 @@ on:
 
 jobs:
   pr:
-  steps:
-    - uses: jwalton/gh-find-current-pr@v1
-      id: get-pr
-      with:
-        state: all
-    - # TODO handle no PR_NUMBER returned above
-      run: |
-        PR_NUMBER='${{ steps.pr.outputs.pr }}'
-        echo "pr-number=${PR_NUMBER}" >> "${GITHUB_ENV}"
-  outputs:
-    pr: ${{ env.PR_NUMBER }}
+    steps:
+      - uses: jwalton/gh-find-current-pr@v1
+        id: get-pr
+        with:
+          state: all
+      - # TODO handle no PR_NUMBER returned above
+        run: |
+          PR_NUMBER='${{ steps.pr.outputs.pr }}'
+          echo "pr-number=${PR_NUMBER}" >> "${GITHUB_ENV}"
+    outputs:
+      pr: ${{ env.PR_NUMBER }}
   up:
     needs: get-pr
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true || github.event_name == 'push' }}
