@@ -16,7 +16,7 @@
         "@pulumi/tls": "^4.6.1",
         "ip-address": "^8.1.0",
         "netmask": "^2.0.2",
-        "openpgp": "~5.1.0"
+        "openpgp": "~5.5.0"
     },
     "scripts": {
         "preinstall": "npx only-allow pnpm"
