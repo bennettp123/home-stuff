@@ -29,9 +29,9 @@ config:
   home-stuff:enable-test-servers: "false"
   home-stuff:enable-vpc-endpoints: "false"
   home-stuff:home-cidr-blocks:
-  - 192.168.0.0/18
-  - 192.168.128.0/18
-  - 192.168.192.0/18
+    - 192.168.0.0/18
+    - 192.168.128.0/18
+    - 192.168.192.0/18
   home-stuff:home-public-ip: usg.home.bennettp123.com
   home-stuff:openvpn-listen-on-port: "1194"
   home-stuff:openvpn-remote-port: "1194"
@@ -42,10 +42,9 @@ config:
   instance:default-users:
     logins:
       bennett:
-      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH
-        bennett@MacBook Pro 16
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH bennett@MacBook Pro 16
     sudoers:
-    - bennett
+      - bennett
   mail:provider: icloud
   plex:create-s3-bucket: "false"
   plex:instance-type: a1.medium
