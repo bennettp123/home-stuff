@@ -13,15 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: jwalton/gh-find-current-pr@v1
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         id: pr
         with:
           state: all
-      - # TODO handle no PR_NUMBER returned above
-        run: |
-          PR_NUMBER='${{ steps.pr.outputs.pr }}'
+      - run: |
+          if [ '${{ github.event_name }}' = 'schedule' ]; then
+            # don't comment if triggered by schedule
+            PR_NUMBER='false'
+          elif [ '${{ github.event_name }}' = 'workflow_dispatch' ]; then
+            # don't comment if triggered manually
+            PR_NUMBER='false'
+          else
+            PR_NUMBER='${{ steps.pr.outputs.pr }}'
+          fi
+          
           echo "PR_NUMBER=${PR_NUMBER}" >> "${GITHUB_ENV}"
     outputs:
-      pr-number: ${{ env.PR_NUMBER }}
+      pr-number: ${{ env.PR_NUMBER != 'false' && env.PR_NUMBER || false }}
   up:
     needs: get-pr
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true || github.event_name == 'push' }}
