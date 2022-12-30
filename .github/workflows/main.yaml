@@ -20,7 +20,7 @@ jobs:
       - name: extract output
         run: |
           if [ '${{ github.event_name }}' = 'schedule' ] || [ '${{ github.event_name }}' = 'workflow_dispatch' ]; then
-            echo 'skipping PR for github.event_name=${{ github.event_name }}'
+            echo 'using PR_NUMBER=false for github.event_name=${{ github.event_name }}'
             PR_NUMBER='false'
           else
             echo 'using PR_NUMBER=${{ steps.pr.outputs.pr }} for github.event_name=${{ github.event_name }}'
