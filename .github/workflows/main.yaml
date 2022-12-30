@@ -19,16 +19,13 @@ jobs:
           state: all
       - name: extract output
         run: |
-          if [ '${{ github.event_name }}' = 'schedule' ]; then
-            # don't comment if triggered by schedule
-            PR_NUMBER='false'
-          elif [ '${{ github.event_name }}' = 'workflow_dispatch' ]; then
-            # don't comment if triggered manually
+          if [ '${{ github.event_name }}' = 'schedule' ] || [ '${{ github.event_name }}' = 'workflow_dispatch' ]; then
+            echo 'skipping PR for github.event_name=${{ github.event_name }}'
             PR_NUMBER='false'
           else
+            echo 'using PR_NUMBER=${{ steps.pr.outputs.pr }} for github.event_name=${{ github.event_name }}'
             PR_NUMBER='${{ steps.pr.outputs.pr }}'
           fi
-
           echo "PR_NUMBER=${PR_NUMBER}" >> "${GITHUB_ENV}"
     outputs:
       pr-number: ${{ env.PR_NUMBER != 'false' && env.PR_NUMBER || false }}
