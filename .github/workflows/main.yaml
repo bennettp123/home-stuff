@@ -17,7 +17,8 @@ jobs:
         id: pr
         with:
           state: all
-      - run: |
+      - name: extract output
+        run: |
           if [ '${{ github.event_name }}' = 'schedule' ]; then
             # don't comment if triggered by schedule
             PR_NUMBER='false'
@@ -27,7 +28,7 @@ jobs:
           else
             PR_NUMBER='${{ steps.pr.outputs.pr }}'
           fi
-          
+
           echo "PR_NUMBER=${PR_NUMBER}" >> "${GITHUB_ENV}"
     outputs:
       pr-number: ${{ env.PR_NUMBER != 'false' && env.PR_NUMBER || false }}
