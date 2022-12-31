@@ -1,7 +1,7 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as openpgp from 'openpgp'
-import { isUint8Array } from 'util/types'
+import { types } from 'util'
 
 /**
  * can't use this becuase pulumi can't import its types, and for some reason
@@ -125,7 +125,9 @@ export class IamUser extends pulumi.ComponentResource {
                                       //    await readToEnd(plaintextMessage),
                                       //).toString()
 
-                                      if (isUint8Array(plaintextMessage)) {
+                                      if (
+                                          types.isUint8Array(plaintextMessage)
+                                      ) {
                                           return Buffer.from(
                                               plaintextMessage,
                                           ).toString()
