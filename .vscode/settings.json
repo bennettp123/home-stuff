@@ -5,16 +5,17 @@
         "source.organizeImports": true
     },
     "files.exclude": {
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
+        "**/.dccache": true,
         "**/.DS_Store": true,
-        "**/*.map": {
-            "when": "$(basename)"
-        },
+        "**/.git": true,
+        "**/.hg": true,
+        "**/.svn": true,
         "**/*.js": {
             "when": "$(basename).ts"
         },
+        "**/*.map": {
+            "when": "$(basename)"
+        },
         "**/*.sqlite": true
-    },
+    }
 }
