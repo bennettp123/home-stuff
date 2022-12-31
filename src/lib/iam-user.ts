@@ -1,6 +1,13 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as openpgp from 'openpgp'
+import { types } from 'util'
+
+/**
+ * can't use this becuase pulumi can't import its types, and for some reason
+ * also refuses to import custom types when you declare them in a .d.ts file
+ */
+//import { readToEnd } from '@openpgp/web-stream-tools'
 
 const config = new pulumi.Config('common')
 const privKey = config.requireSecret<string>('pgp-private-key')
@@ -86,27 +93,50 @@ export class IamUser extends pulumi.ComponentResource {
                                                           'base64',
                                                       ),
                                                   }),
-                                              passphrase,
+                                              passphrase: passphrase,
                                           })
 
-                                      const buf = Buffer.from(
+                                      const messageBuffer = Buffer.from(
                                           encrypted,
                                           'base64',
                                       )
-                                      const message = await openpgp.readMessage(
-                                          {
-                                              binaryMessage: buf,
-                                          },
-                                      )
+                                      const encryptedMessage =
+                                          await openpgp.readMessage<Buffer>({
+                                              binaryMessage: messageBuffer,
+                                          })
 
-                                      const { data: decrypted } =
-                                          await openpgp.decrypt({
-                                              message,
+                                      const { data: plaintextMessage } =
+                                          await openpgp.decrypt<Buffer>({
+                                              message: encryptedMessage,
                                               format: 'binary',
                                               decryptionKeys: privateKey,
                                           })
 
-                                      return Buffer.from(decrypted).toString()
+                                      /**
+                                       * this is the _right_ way to do it, but
+                                       * for some reason, pulumi can't import
+                                       * the already existing types provided
+                                       * by @openpgp/web-stream-tools
+                                       *
+                                       * So instead, just check if it's
+                                       * UInt8Array, and throw if it isn't
+                                       */
+                                      //return Buffer.from(
+                                      //    await readToEnd(plaintextMessage),
+                                      //).toString()
+
+                                      if (
+                                          types.isUint8Array(plaintextMessage)
+                                      ) {
+                                          return Buffer.from(
+                                              plaintextMessage,
+                                          ).toString()
+                                      }
+
+                                      throw new pulumi.ResourceError(
+                                          'unhandled type',
+                                          this,
+                                      )
                                   },
                               ),
                       )
