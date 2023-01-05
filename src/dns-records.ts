@@ -452,7 +452,7 @@ new aws.route53.Record(
         records: ['homebridge.tailc56a3.ts.net.'],
     },
     {
-        aliases: [{ name: 'homebridge-a' }, { name: 'homebridge-aaaa' }],
+        aliases: [{ name: 'homebridge-a' }],
         deleteBeforeReplace: true,
     },
 )
