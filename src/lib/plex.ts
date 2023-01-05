@@ -202,8 +202,8 @@ export class Plex extends pulumi.ComponentResource {
             pulumi
                 .all([storage.id, cache.id])
                 .apply(([plexVolumeId, cacheVolumeId]) => [
-                    plexVolumeId.replace('-', ''),
-                    cacheVolumeId.replace('-', ''),
+                    plexVolumeId.replace(/vol-/, 'vol'),
+                    cacheVolumeId.replace(/vol-/, 'vol'),
                 ])
                 .apply(([plexVolumeId, cacheVolumeId]) => {
                     const plexDevice: string = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${plexVolumeId}`
@@ -239,14 +239,16 @@ export class Plex extends pulumi.ComponentResource {
                                 permissions: '0600',
                                 content: wasabiCreds,
                             },
-                            {
-                                path: '/etc/cron.hourly/clean-up-s3fs-cache',
-                                owner: 'root:root',
-                                permissions: '0755',
-                                content: `#!/bin/bash
+                            ...(wasabiBucket
+                                ? [
+                                      {
+                                          path: '/etc/cron.hourly/clean-up-s3fs-cache',
+                                          owner: 'root:root',
+                                          permissions: '0755',
+                                          content: `#!/bin/bash
 
-                                CACHE_DIR="/var/cache/s3fs/${wasabiBucket?.replace(
-                                    '/',
+                                CACHE_DIR="/var/cache/s3fs/${wasabiBucket.replace(
+                                    /\//g,
                                     '\\/',
                                 )}"
                                 ENSURE_FREE=$(( 1 * 1024 * 1024 )) # 1GB
@@ -261,7 +263,9 @@ export class Plex extends pulumi.ComponentResource {
                                   fi
                                 done
                                 `,
-                            },
+                                      },
+                                  ]
+                                : []),
                         ],
                         disk_setup: Object.fromEntries([
                             ...Object.entries(
@@ -347,8 +351,8 @@ export class Plex extends pulumi.ComponentResource {
                 pulumi
                     .all([storage.id, cache.id])
                     .apply(([plexVolumeId, cacheVolumeId]) => [
-                        plexVolumeId.replace('-', ''),
-                        cacheVolumeId.replace('-', ''),
+                        plexVolumeId.replace(/vol-/, 'vol'),
+                        cacheVolumeId.replace(/vol-/, 'vol'),
                     ])
                     .apply(([plexVolumeId, cacheVolumeId]) => {
                         const plexDevice = `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${plexVolumeId}-part1`

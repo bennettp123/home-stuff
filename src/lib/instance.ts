@@ -27,7 +27,10 @@ export const config = new pulumi.Config('instance')
 export type SshKey = string
 export type DefaultInstanceSettings = {
     logins?: {
-        [username: string]: Array<SshKey>
+        [username: string]: {
+            ssh_keys: Array<SshKey>
+            hashed_password?: string
+        }
     }
     sudoers?: Array<string>
 }
@@ -37,16 +40,21 @@ export const defaults =
 
 // examples: https://cloudinit.readthedocs.io/en/latest/topics/examples.html#including-users-and-groups
 export const users = Object.entries(defaults?.logins ?? [])
-    .map(([name, ssh_authorized_keys]) => {
-        return {
+    .map(
+        ([
             name,
-            ssh_authorized_keys,
-            ...((defaults?.sudoers ?? []).includes(name)
-                ? { sudo: 'ALL=(ALL) NOPASSWD:ALL' }
-                : {}),
-            passwd: '$6$rounds=4096$00dGvNxeJdL0$yK0ssssl5zyEXQGHL7IKJRE3LqCrV7W2svJDwOPg.nkXscZkJ1/dPlYsEz512XkVQwQ/iR/QTn22g2YMnvp4z1',
-        }
-    })
+            { ssh_keys: ssh_authorized_keys, hashed_password: passwd },
+        ]) => {
+            return {
+                name,
+                ssh_authorized_keys,
+                ...((defaults?.sudoers ?? []).includes(name)
+                    ? { sudo: 'ALL=(ALL) NOPASSWD:ALL' }
+                    : {}),
+                ...(passwd ? { passwd } : {}),
+            }
+        },
+    )
     .filter((user) => user.ssh_authorized_keys.length > 0)
 
 const upgrade = `#!/bin/sh

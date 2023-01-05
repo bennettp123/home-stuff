@@ -42,7 +42,10 @@ config:
   instance:default-users:
     logins:
       bennett:
-        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH bennett@MacBook Pro 16
+        hashed_password:
+          secure: v1:Yxr5rJMl/soOpZxV:H8ztjJv87JPvnyZUDklK8Ybz+U64ilR6KpIUGhUb5Si/GLwIU2T1rtzs/b18Kahb4p5swdPv8p0Ypo83dvfL/FSNCw21sYq/zAf4uVuhUTkxSi02M3Z8Fs/EG8Q5FAlBzo6WJfaMRQpmADvVYkdIL2BJJ1t8riOLj33L9pTo+gsmLA==
+        ssh_keys:
+          - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH bennett@MacBook Pro 16
     sudoers:
       - bennett
   mail:provider: icloud
