@@ -8,11 +8,11 @@
     },
     "dependencies": {
         "@openpgp/web-stream-tools": "^0.0.13",
-        "@pulumi/aws": "^5.24.0",
+        "@pulumi/aws": "^5.26.0",
         "@pulumi/aws-native": "^0.45.0",
         "@pulumi/awsx": "^1.0.1",
         "@pulumi/docker": "^3.6.1",
-        "@pulumi/pulumi": "^3.50.0",
+        "@pulumi/pulumi": "^3.51.0",
         "@pulumi/random": "^4.8.2",
         "@pulumi/tls": "^4.6.1",
         "ip-address": "^8.1.0",
