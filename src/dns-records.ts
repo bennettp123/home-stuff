@@ -450,6 +450,7 @@ new aws.route53.Record(
         type: 'CNAME',
         zoneId: zoneId['home.bennettp123.com'],
         records: ['homebridge.tailc56a3.ts.net.'],
+        ttl: 300,
     },
     {
         aliases: [{ name: 'homebridge-a' }],
