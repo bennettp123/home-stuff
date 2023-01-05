@@ -444,29 +444,15 @@ new aws.route53.Record(
 )
 
 new aws.route53.Record(
-    'homebridge-aaaa',
+    'homebridge-cname',
     {
         name: 'homebridge.home.bennettp123.com',
-        type: 'AAAA',
+        type: 'CNAME',
         zoneId: zoneId['home.bennettp123.com'],
-        ttl: 300,
-        records: ['2404:bf40:e402:33:586a:d587:9e99:4252'],
+        records: ['homebridge.tailc56a3.ts.net.'],
     },
     {
-        deleteBeforeReplace: true,
-    },
-)
-
-new aws.route53.Record(
-    'homebridge-a',
-    {
-        name: 'homebridge.home.bennettp123.com',
-        type: 'A',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 300,
-        records: ['192.168.33.127'],
-    },
-    {
+        aliases: [{ name: 'homebridge-a' }, { name: 'homebridge-aaaa' }],
         deleteBeforeReplace: true,
     },
 )
