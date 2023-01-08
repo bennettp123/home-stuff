@@ -240,6 +240,37 @@ export class Gateway extends pulumi.ComponentResource {
             .map((line) => line.replace(/^\s*/, ''))
             .join('\n')
 
+        const tailscaleRoutedHostnames = ['bitbucket.swmdigital.io']
+
+        // TODO look up hostnames (above)
+        const tailscaleRoutes = [
+            '54.252.158.21/32', // bastion.swmdigital.io
+            '13.55.57.151/32', // branch-deploys
+            '54.79.218.38/32', // thewest
+            '52.63.148.231/32', // perthnow
+            '3.104.86.9/32', // sevennews
+            '13.210.30.53/32', // bitbucket.swmdigital.io
+            '52.62.161.35/32', // bitbucket.swmdigital.io
+        ]
+
+        const tailscaleAuthkeyFile = '/root/.tailscaleAuthkey'
+        const tailscaleAuthkey = config.requireSecret('tailscale-auth-key')
+
+        // TODO advertise routes (above)
+        // TODO advertise tags
+        // TODO add token/key
+        const startTailscaled = `
+            #!/bin/sh
+            sudo systemctl enable --now tailscaled
+            sudo tailscale up \
+              --advertise-routes="${tailscaleRoutes.join(',')}" \
+              --advertise-tags="tag:server" \
+              --auth-key="file:${tailscaleAuthkeyFile}"
+        `
+            .split('\n')
+            .map((line) => line.replace(/^\s*/, ''))
+            .join('\n')
+
         const userData = pulumi
             .all([
                 args.natCidrs,
@@ -247,6 +278,7 @@ export class Gateway extends pulumi.ComponentResource {
                 wireguard.privatekey,
                 wireguard.presharedkey,
                 wireguardConf,
+                tailscaleAuthkey,
             ])
             .apply(
                 ([
@@ -255,8 +287,22 @@ export class Gateway extends pulumi.ComponentResource {
                     privatekey,
                     presharedkey,
                     wireguardConf,
+                    tailscaleAuthkey,
                 ]) => ({
                     ...defaultUserData,
+                    yum_repos: {
+                        ...defaultUserData.yum_repos,
+                        'tailscale-stable': {
+                            name: 'Tailscale stable',
+                            baseurl:
+                                'https://pkgs.tailscale.com/stable/amazon-linux/2/$basearch',
+                            enabled: true,
+                            type: 'rpm',
+                            repo_gpgcheck: true,
+                            gpgcheck: 0,
+                            gpgkey: 'https://pkgs.tailscale.com/stable/amazon-linux/2/repo.gpg',
+                        },
+                    },
                     packages: [
                         ...defaultUserData.packages,
 
@@ -270,6 +316,9 @@ export class Gateway extends pulumi.ComponentResource {
                         'make',
                         'gcc',
                         'git',
+
+                        'yum-utils',
+                        'tailscale',
 
                         getSsmAgentUrl({ arch: 'arm64' }),
                         'python3', // required by patch manager
@@ -295,6 +344,12 @@ export class Gateway extends pulumi.ComponentResource {
                             content: presharedkey,
                         },
                         {
+                            path: tailscaleAuthkeyFile,
+                            owner: 'root:root',
+                            permissions: '0600',
+                            content: tailscaleAuthkey,
+                        },
+                        {
                             path: '/etc/wireguard/wg0.conf',
                             owner: 'root:root',
                             permissions: '0600',
@@ -311,6 +366,12 @@ export class Gateway extends pulumi.ComponentResource {
                             owner: 'root:root',
                             permissions: '0755',
                             content: enableKernelLivePatching,
+                        },
+                        {
+                            path: '/opt/bennettp123/bin/set-up-talescale',
+                            owner: 'root:root',
+                            permissions: '0755',
+                            content: startTailscaled,
                         },
                     ],
                     bootcmd: [
@@ -348,6 +409,9 @@ export class Gateway extends pulumi.ComponentResource {
                         '/sbin/service network restart',
                         'ifdown eth0',
                         'ifup eth0',
+
+                        // install and enable tailscale
+                        '/opt/bennettp123/bin/set-up-talescale',
 
                         // install and enable wireguard
                         '/opt/bennettp123/bin/install-wireguard-tools',
