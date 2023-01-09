@@ -253,19 +253,25 @@ export class Gateway extends pulumi.ComponentResource {
             '52.62.161.35/32', // bitbucket.swmdigital.io
         ]
 
+        const enableTailScaleRoutes =
+            (tailscaleRoutes?.length ?? 0) > 0 && false // moved to udm0-office for now
+
         const tailscaleAuthkeyFile = '/root/.tailscaleAuthkey'
         const tailscaleAuthkey = config.requireSecret('tailscale-auth-key')
 
-        // TODO advertise routes (above)
-        // TODO advertise tags
         // TODO add token/key
         const startTailscaled = `
             #!/bin/sh
             sudo systemctl enable --now tailscaled
             sudo tailscale up \
-              --advertise-routes="${tailscaleRoutes.join(',')}" \
-              --advertise-tags="tag:server" \
-              --auth-key="file:${tailscaleAuthkeyFile}"
+                --hostname="${args.dns.hostname}" \
+                --auth-key="file:${tailscaleAuthkeyFile}" \
+                --advertise-tags="tag:server" \
+                ${
+                    enableTailScaleRoutes
+                        ? `--advertise-routes="${tailscaleRoutes.join(',')}"`
+                        : ';'
+                }
         `
             .split('\n')
             .map((line) => line.replace(/^\s*/, ''))
