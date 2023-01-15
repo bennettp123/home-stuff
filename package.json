@@ -3,8 +3,9 @@
     "main": "src/index.ts",
     "engines": {
         "node": ">=18",
-	"pnpm": ">=7"
+        "pnpm": ">=7"
     },
+    "packageManager": "pnpm@7",
     "devDependencies": {
         "@types/netmask": "^1.0.30",
         "@types/node": "^18.11.18",
