@@ -44,6 +44,11 @@ export class Vpc extends pulumi.ComponentResource {
             vpcName,
             {
                 numberOfAvailabilityZones,
+                requestedAvailabilityZones: [
+                    'ap-southeast-2a',
+                    'ap-southeast-2b',
+                    'ap-southeast-2c',
+                ],
                 numberOfNatGateways,
                 cidrBlock,
                 enableDnsSupport: true,
