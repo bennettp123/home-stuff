@@ -17,5 +17,6 @@
             "when": "$(basename)"
         },
         "**/*.sqlite": true
-    }
+    },
+    "aws.telemetry": false
 }
