@@ -16,6 +16,10 @@ on:
       AWS_SECRET_ACCESS_KEY:
         required: true
 
+env:
+  PULUMI_SELF_MANAGED_STATE_GZIP: 'true'
+  PULUMI_NODEJS_TRANSPILE_ONLY: 'true'
+
 jobs:
   up:
     concurrency: deploy
@@ -24,31 +28,28 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: package.json
-
       - uses: pnpm/action-setup@v2
         name: Install pnpm
         id: pnpm-install
         with:
           run_install: false
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: package.json
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
 
       - uses: actions/cache@v3
-        name: Setup pnpm cache
+        name: Set up typescript cache
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-node${{ matrix.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ./.tsbuildinfo
+          key: ${{ runner.os }}-tsbuildinfo-${{ hashFiles('**/*.ts', '**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-node${{ matrix.node-version }}-pnpm-store-
+            ${{ runner.os }}-tsbuildinfo-
 
-      - run: pnpm install
+      - run: pnpm typecheck
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1-node16

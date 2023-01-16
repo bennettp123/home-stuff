@@ -1,5 +1,6 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
+import filenamify from 'filenamify'
 import { appendCmds, getTags } from '../helpers'
 import {
     getUbuntuAmi,
@@ -14,6 +15,13 @@ const config = new pulumi.Config('plex')
  * Mount a wasabi bucket in addition to the S3 bucket.
  */
 const wasabiBucket = config.get<string>('wasabi-bucket')
+
+/**
+ * Cache folder for s3fs-fuse
+ */
+const wasabiCache =
+    wasabiBucket &&
+    `/var/cache/s3fs/${filenamify(wasabiBucket, { replacement: '-' })}`
 
 /**
  * Access key for connecting to wasabi-bucket
@@ -247,10 +255,16 @@ export class Plex extends pulumi.ComponentResource {
                                           permissions: '0755',
                                           content: `#!/bin/bash
 
-                                CACHE_DIR="/var/cache/s3fs/${wasabiBucket.replace(
-                                    /\//g,
-                                    '\\/',
-                                )}"
+                                CACHE_DIR="${
+                                    wasabiCache ??
+                                    (() => {
+                                        // this should be unreachable
+                                        throw new pulumi.ResourceError(
+                                            'wasabiCache is undefined!',
+                                            this,
+                                        )
+                                    })()
+                                }"
                                 ENSURE_FREE=$(( 1 * 1024 * 1024 )) # 1GB
 
                                 for file in \`find  -type f | xargs ls -ut1 | tac\`; do
@@ -340,7 +354,15 @@ export class Plex extends pulumi.ComponentResource {
                                   'fuse.s3fs',
                                   `_netdev,rw,nosuid,nodev,allow_other,user=plex${
                                       wasabiUrl ? `,url=${wasabiUrl}` : ''
-                                  },use_cache=/var/cache/s3fs`,
+                                  },use_cache=${
+                                      wasabiCache ??
+                                      (() => {
+                                          throw new pulumi.ResourceError(
+                                              'wasabiCache is undefined!',
+                                              this,
+                                          )
+                                      })()
+                                  }`,
                                   '0',
                                   '2',
                               ].join('    ')

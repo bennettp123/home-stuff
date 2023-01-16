@@ -1,7 +1,10 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as ipAddress from 'ip-address'
+import jsbn from 'jsbn'
 import { getTags } from '../helpers'
+
+const BigInteger = jsbn.BigInteger
 
 export const homeIPv6s = [
     '2404:bf40:e402::/48', // gabo rd LAN
@@ -925,7 +928,11 @@ export function getSubnets<
     const start = args.start.startAddress()
     const end = args.end.endAddress()
     const addresses = []
-    for (let i = start.bigInteger(); i < end.bigInteger() + 1; i++) {
+    for (
+        let i = start.bigInteger();
+        i < end.bigInteger().add(BigInteger.ONE);
+        i = i.add(BigInteger.ONE)
+    ) {
         addresses.push(
             isAddress4(start)
                 ? ipAddress.Address4.fromBigInteger(i)
