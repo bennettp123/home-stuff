@@ -2,7 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import * as tls from '@pulumi/tls'
-import { Address6 } from 'ip-address'
+import * as ipaddress from 'ip-address'
 import {
     addHostKeys,
     getTags,
@@ -391,14 +391,14 @@ export class Instance extends pulumi.ComponentResource {
                       ipv6Suffixes[3].result,
                   ])
                   .apply(([s, snippet1, snippet2, snippet3, snippet4]) => {
-                      const subnet = new Address6(s.ipv6CidrBlock)
+                      const subnet = new ipaddress.Address6(s.ipv6CidrBlock)
                       if (subnet.subnetMask > 64) {
                           throw new pulumi.ResourceError(
                               'fixed IPv6 needs /64 or larger',
                               this,
                           )
                       }
-                      const ip = new Address6(
+                      const ip = new ipaddress.Address6(
                           [
                               ...subnet.canonicalForm().split(':').slice(0, 4),
                               snippet1,

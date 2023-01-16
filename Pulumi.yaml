@@ -1,5 +1,8 @@
 name: home-stuff
-runtime: nodejs
+runtime:
+  name: nodejs
+  options:
+    nodeargs: "--loader ts-node/esm --no-warnings --es-module-specifier-resolution=node"
 description: Bennett's home infrastructure
 backend:
   url: s3://home-stuff-bennettp123
