@@ -1,0 +1,34 @@
+name: test
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: package.json
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/cache@v3
+        name: Set up typescript cache
+        with:
+          path: ./.tsbuildinfo
+          key: ${{ runner.os }}-tsbuildinfo-${{ hashFiles('**/*.ts', '**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-tsbuildinfo-
+
+      - run: pnpm typecheck
