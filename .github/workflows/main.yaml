@@ -9,9 +9,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yaml
-
   get-pr:
     runs-on: ubuntu-latest
     steps:
@@ -32,9 +29,9 @@ jobs:
           echo "PR_NUMBER=${PR_NUMBER}" >> "${GITHUB_ENV}"
     outputs:
       pr-number: ${{ env.PR_NUMBER != 'false' && env.PR_NUMBER || false }}
+
   up:
     needs:
-      - test
       - get-pr
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.pull_request.merged == true || github.event_name == 'push' }}
     # TODO switch back to pulumi/actions@v3
