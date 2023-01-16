@@ -18,7 +18,6 @@ on:
 
 env:
   PULUMI_SELF_MANAGED_STATE_GZIP: 'true'
-  PULUMI_NODEJS_TRANSPILE_ONLY: 'true'
 
 jobs:
   up:
