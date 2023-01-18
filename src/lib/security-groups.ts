@@ -1,10 +1,6 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
-import * as ipAddress from 'ip-address'
-import jsbn from 'jsbn'
 import { getTags } from '../helpers'
-
-const BigInteger = jsbn.BigInteger
 
 export const homeIPv6s = [
     '2404:bf40:e402::/48', // gabo rd LAN
@@ -899,59 +895,3 @@ export class SecurityGroups extends pulumi.ComponentResource {
         )
     }
 }
-function isAddress(
-    address: any,
-): address is ipAddress.Address4 | ipAddress.Address6 {
-    return (
-        ((address as ipAddress.Address4).address !== undefined &&
-            (address as ipAddress.Address4).startAddress !== undefined &&
-            (address as ipAddress.Address4).endAddress !== undefined &&
-            (address as ipAddress.Address4).bigInteger !== undefined) ||
-        ((address as ipAddress.Address6).address !== undefined &&
-            (address as ipAddress.Address6).startAddress !== undefined &&
-            (address as ipAddress.Address6).endAddress !== undefined &&
-            (address as ipAddress.Address6).bigInteger !== undefined)
-    )
-}
-
-function isAddress4(address: any): address is ipAddress.Address4 {
-    return isAddress(address) && (address as ipAddress.Address4).v4 === true
-}
-
-function isAddress6(address: any): address is ipAddress.Address6 {
-    return isAddress(address) && (address as ipAddress.Address6).v4 === false
-}
-
-export function getSubnets<
-    T extends ipAddress.Address4 | ipAddress.Address6,
->(args: { start: T; end: T }) {
-    const start = args.start.startAddress()
-    const end = args.end.endAddress()
-    const addresses = []
-    for (
-        let i = start.bigInteger();
-        i < end.bigInteger().add(BigInteger.ONE);
-        i = i.add(BigInteger.ONE)
-    ) {
-        addresses.push(
-            isAddress4(start)
-                ? ipAddress.Address4.fromBigInteger(i)
-                : isAddress6(start)
-                ? ipAddress.Address6.fromBigInteger(i)
-                : (() => {
-                      throw new Error(
-                          'start does not appear to be an Address4 or Address6 type',
-                      )
-                  })(),
-        )
-    }
-    return addresses
-}
-
-export function packSubnets<T extends ipAddress.Address4 | ipAddress.Address6>(
-    addresses: T[],
-) {}
-
-export function exclude<
-    T extends ipAddress.Address4 | ipAddress.Address6,
->(args: { subnet: T; from: T }) {}
