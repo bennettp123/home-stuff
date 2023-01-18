@@ -2,7 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import * as tls from '@pulumi/tls'
-import * as ipaddr from 'ipaddr.js'
+import ipaddr from 'ipaddr.js'
 import {
     addHostKeys,
     getTags,
@@ -424,7 +424,7 @@ export class Instance extends pulumi.ComponentResource {
                           // but strip it anyway, just to be safe
                           .replace(/\/.*$/g, '')
 
-                      return `${ip}/128`
+                      return ip
                   })
             : undefined
 
