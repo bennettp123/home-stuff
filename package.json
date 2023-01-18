@@ -8,8 +8,7 @@
     },
     "packageManager": "pnpm@7.25.0+sha1.2e1fb9dcec19c0cc10dac64e305188a9f713103c",
     "devDependencies": {
-        "@swc/core": "^1.3.26",
-        "@types/jsbn": "^1.2.30",
+        "@swc/core": "^1.3.27",
         "@types/netmask": "^1.0.30",
         "@types/node": "^18.11.18",
         "prettier": "^2.8.3",
@@ -26,14 +25,12 @@
         "@pulumi/random": "^4.8.2",
         "@pulumi/tls": "^4.6.1",
         "filenamify": "^5.1.1",
-        "ip-address": "^8.1.0",
-        "jsbn": "^1.1.0",
+        "ipaddr.js": "^2.0.1",
         "netmask": "^2.0.2",
         "openpgp": "~5.5.0"
     },
     "scripts": {
         "typecheck": "pnpm tsc --project tsconfig.typecheck-only.json",
-        "preinstall": "npx only-allow pnpm",
-        "postinstall": "scripts/fix-ip-address-modules-ridiculously-broken-hybrid-esm-support.sh"
+        "preinstall": "npx only-allow pnpm"
     }
 }

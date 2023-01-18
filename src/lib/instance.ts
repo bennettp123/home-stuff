@@ -2,7 +2,7 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import * as tls from '@pulumi/tls'
-import * as ipaddress from 'ip-address'
+import ipaddr from 'ipaddr.js'
 import {
     addHostKeys,
     getTags,
@@ -10,6 +10,7 @@ import {
     prependCmds,
     SshHostKeys,
 } from '../helpers'
+import { isIPv6 } from '../helpers/ipaddr-typeguards'
 
 /*
 
@@ -391,23 +392,39 @@ export class Instance extends pulumi.ComponentResource {
                       ipv6Suffixes[3].result,
                   ])
                   .apply(([s, snippet1, snippet2, snippet3, snippet4]) => {
-                      const subnet = new ipaddress.Address6(s.ipv6CidrBlock)
-                      if (subnet.subnetMask > 64) {
+                      const [subnet, netmask] = ipaddr.parseCIDR(
+                          s.ipv6CidrBlock,
+                      )
+
+                      if (!isIPv6(subnet)) {
+                          throw new pulumi.ResourceError(
+                              'detected bad subnet',
+                              this,
+                          )
+                      }
+
+                      if (netmask > 64) {
                           throw new pulumi.ResourceError(
                               'fixed IPv6 needs /64 or larger',
                               this,
                           )
                       }
-                      const ip = new ipaddress.Address6(
-                          [
-                              ...subnet.canonicalForm().split(':').slice(0, 4),
-                              snippet1,
-                              snippet2,
-                              snippet3,
-                              snippet4,
-                          ].join(':') + '/128',
-                      )
-                      return ip.correctForm()
+
+                      // note IPv6.toString() does not include the subnet mask
+                      // but it does in the unreleased master branch
+                      const ip = new ipaddr.IPv6([
+                          ...subnet.parts.slice(0, 4),
+                          ...[snippet1, snippet2, snippet3, snippet4].map(
+                              (snippet) => Number.parseInt(snippet, 16),
+                          ),
+                      ])
+                          // IPv6.toRFC5952String() does not include the
+                          // subnet mask
+                          .toRFC5952String()
+                          // but strip it anyway, just to be safe
+                          .replace(/\/.*$/g, '')
+
+                      return ip
                   })
             : undefined
 
