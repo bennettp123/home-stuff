@@ -366,7 +366,7 @@ export class Instance extends pulumi.ComponentResource {
                               upper: false,
                               special: true,
                               number: true,
-                              minNumeric: 0,
+                              minNumeric: 1,
                               overrideSpecial: 'abcdef',
                           },
                           { parent: this },
