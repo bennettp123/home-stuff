@@ -470,3 +470,31 @@ new aws.route53.Record(
         deleteBeforeReplace: true,
     },
 )
+
+new aws.route53.Record(
+    'miniserver-aaaa',
+    {
+        name: 'miniserver.dmz.bennettp123.com',
+        type: 'AAAA',
+        zoneId: zoneId['home.bennettp123.com'],
+        ttl: 300,
+        records: ['2404:bf40:e402:20:9cca:9436:431a:e6e2'],
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
+
+new aws.route53.Record(
+    'miniserver-a',
+    {
+        name: 'miniserver.dmz.bennettp123.com',
+        type: 'A',
+        zoneId: zoneId['home.bennettp123.com'],
+        ttl: 300,
+        records: ['192.168.20.80'],
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
