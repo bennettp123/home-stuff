@@ -33,11 +33,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - uses: pulumi/actions@v4
+      - uses: bennettp123/actions@benenttp123-colorize
         with:
           command: preview
           stack-name: home
           cloud-url: s3://home-stuff-bennettp123
           comment-on-pr: true
-          edit-pr-comment: false
+          edit-pr-comment: true
           color: always
