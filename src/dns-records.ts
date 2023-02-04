@@ -18,10 +18,171 @@ const mailConfig = new pulumi.Config('mail')
 
 const mailProvider = mailConfig.get<string>('provider') as 'gmail' | 'icloud'
 
-const zoneId = {
-    'bennettp123.com': 'Z36Q6VQY8AKSB2',
-    'home.bennettp123.com': 'Z1LNE5PQ9LO13V',
-}
+const getZoneId = (name: string) =>
+    pulumi.output(aws.route53.getZone({ name })).zoneId
+
+const zoneId = Object.fromEntries(
+    ['bennettp123.com', 'home.bennettp123.com', 'no-vaccine-for-you.com'].map(
+        (name) => [name, getZoneId(name)],
+    ),
+)
+
+pulumi
+    .all(Object.entries(zoneId))
+    .apply((zoneId) => Object.fromEntries(zoneId))
+    .apply((zoneId) => pulumi.log.info(`zone ids: ${JSON.stringify(zoneId)}`))
+
+const iCloudRecordsForCustomMailDomain = (args: {
+    name: string
+    zoneId?: aws.route53.RecordArgs['zoneId']
+    proofOfDomainOwnership: string
+    createApexTxt?: boolean | { aliases: pulumi.ResourceOptions['aliases'] }
+    mx?: {
+        name?: aws.route53.RecordArgs['name']
+        zoneId?: aws.route53.RecordArgs['zoneId']
+        records?: aws.route53.RecordArgs['records']
+        allowOverwrite?: aws.route53.RecordArgs['allowOverwrite']
+        aliases?: pulumi.ResourceOptions['aliases']
+    }
+    spf?: {
+        name?: aws.route53.RecordArgs['name']
+        zoneId?: aws.route53.RecordArgs['zoneId']
+        type?: 'TXT' | 'SPF'
+        records?: aws.route53.RecordArgs['records']
+        allowOverwrite?: aws.route53.RecordArgs['allowOverwrite']
+        aliases?: pulumi.ResourceOptions['aliases']
+    }
+    dmarc?: {
+        name?: aws.route53.RecordArgs['name']
+        zoneId?: aws.route53.RecordArgs['zoneId']
+        records?: aws.route53.RecordArgs['records']
+        allowOverwrite?: aws.route53.RecordArgs['allowOverwrite']
+        aliases?: pulumi.ResourceOptions['aliases']
+    }
+    dkim?: [
+        {
+            name?: aws.route53.RecordArgs['name']
+            zoneId?: aws.route53.RecordArgs['zoneId']
+            type?: 'CNAME' | aws.route53.RecordArgs['type']
+            records?: aws.route53.RecordArgs['records']
+            allowOverwrite?: aws.route53.RecordArgs['allowOverwrite']
+            aliases?: pulumi.ResourceOptions['aliases']
+        },
+    ]
+}) => ({
+    proofOfDomainOwnership: args.proofOfDomainOwnership,
+    mx: new aws.route53.Record(
+        `${args.name}-mx`,
+        {
+            name: args.mx?.name ?? args.name,
+            zoneId: args.mx?.zoneId ?? args.zoneId ?? zoneId[args.name],
+            type: 'MX',
+            ttl: 300,
+            records: args.mx?.records ?? [
+                '10 mx01.mail.icloud.com.',
+                '10 mx02.mail.icloud.com.',
+            ],
+            allowOverwrite: args.mx?.allowOverwrite ?? false,
+        },
+        { deleteBeforeReplace: true, aliases: args.mx?.aliases },
+    ),
+    spf: args.createApexTxt
+        ? { records: args.spf?.records ?? ['v=spf1 include:icloud.com ~all'] }
+        : new aws.route53.Record(
+              `${args.name}-spf`,
+              {
+                  name: args.spf?.name ?? args.name,
+                  zoneId: args.spf?.zoneId ?? args.zoneId ?? zoneId[args.name],
+                  type: args.spf?.type ?? 'SPF',
+                  ttl: 300,
+                  records: args.spf?.records ?? [
+                      'v=spf1 include:icloud.com ~all',
+                  ],
+                  allowOverwrite: args.spf?.allowOverwrite,
+              },
+              { deleteBeforeReplace: true, aliases: args.spf?.aliases },
+          ),
+    txt: args.createApexTxt
+        ? new aws.route53.Record(
+              `${args.name}-txt`,
+              {
+                  name: args.name,
+                  type: 'TXT',
+                  zoneId: args.zoneId ?? zoneId[args.name],
+                  ttl: 300,
+                  records: pulumi
+                      .all([args.spf?.records, args.proofOfDomainOwnership])
+                      .apply(([icloudSpf, proofOfDomainOwnership]) => [
+                          proofOfDomainOwnership,
+                          ...(icloudSpf
+                              ? icloudSpf
+                              : ['v=spf1 include:icloud.com ~all']),
+                      ]),
+                  allowOverwrite: false,
+              },
+              {
+                  deleteBeforeReplace: true,
+                  aliases:
+                      typeof args.createApexTxt !== 'boolean'
+                          ? args.createApexTxt.aliases
+                          : undefined,
+              },
+          )
+        : undefined,
+    dmarc: new aws.route53.Record(
+        `${args.name}-dmarc`,
+        {
+            name: args.dmarc?.name ?? `_dmarc.${args.name}`,
+            zoneId: args.dmarc?.zoneId ?? args.zoneId ?? zoneId[args.name],
+            type: 'TXT',
+            ttl: 300,
+            records: args.dmarc?.records ?? [
+                `v=DMARC1; p=quarantine; rua=mailto:monitor@${args.name}; fo=0; adkim=s; aspf=s; pct=100; rf=afrf; sp=quarantine`,
+            ],
+            allowOverwrite: args.dmarc?.allowOverwrite,
+        },
+        { deleteBeforeReplace: true, aliases: args.dmarc?.aliases },
+    ),
+    ...Object.fromEntries(
+        (
+            args.dkim ?? [
+                {
+                    name: undefined,
+                    zoneId: undefined,
+                    type: undefined,
+                    records: undefined,
+                    allowOverwrite: undefined,
+                    aliases: undefined,
+                },
+            ]
+        ).map((dkim, idx) => [
+            `dkim${idx}`,
+            new aws.route53.Record(
+                `${args.name}-dkim${idx + 1}`,
+                {
+                    name: dkim.name ?? `sig${idx + 1}._domainkey.${args.name}`,
+                    zoneId: dkim.zoneId ?? args.zoneId ?? zoneId[args.name],
+                    type: dkim.type ?? 'CNAME',
+                    ttl: 300,
+                    records: dkim.records ?? [
+                        `sig${idx + 1}.dkim.${
+                            args.name
+                        }.at.icloudmailadmin.com.`,
+                    ],
+                    allowOverwrite: dkim.allowOverwrite,
+                },
+                { deleteBeforeReplace: true, aliases: dkim.aliases },
+            ),
+        ]),
+    ),
+})
+
+let spf:
+    | aws.route53.Record
+    | { records: aws.route53.RecordArgs['records'] }
+    | undefined = undefined
+
+let iCloudProof: string | undefined = undefined
 
 if (mailProvider === 'gmail') {
     new aws.route53.Record(
@@ -83,7 +244,7 @@ if (mailProvider === 'gmail') {
     )
 
     // see also TXT record
-    new aws.route53.Record(
+    spf = new aws.route53.Record(
         'spf',
         {
             name: 'bennettp123.com',
@@ -219,116 +380,49 @@ if (mailProvider === 'gmail') {
     )
 } else if (mailProvider === 'icloud') {
     // see also TXT apple-domain
-
-    new aws.route53.Record(
-        'mx',
-        {
-            name: 'bennettp123.com',
-            zoneId: zoneId['bennettp123.com'],
-            type: 'MX',
-            ttl: 300,
-            records: ['10 mx01.mail.icloud.com.', '10 mx02.mail.icloud.com.'],
-            allowOverwrite: true,
-        },
-        { deleteBeforeReplace: true },
-    )
-
     // see also TXT record
-    new aws.route53.Record(
-        'spf',
-        {
-            name: 'bennettp123.com',
-            zoneId: zoneId['bennettp123.com'],
-            type: 'SPF',
-            ttl: 300,
-            records: ['v=spf1 include:icloud.com ~all'],
-            allowOverwrite: true,
+    const iCloud = iCloudRecordsForCustomMailDomain({
+        name: 'bennettp123.com',
+        zoneId: zoneId['bennettp123.com'],
+        proofOfDomainOwnership: 'apple-domain=J1zntegtGRFkr4xX',
+        mx: {
+            aliases: [{ name: 'mx' }],
         },
-        { deleteBeforeReplace: true },
-    )
+        spf: {
+            aliases: [{ name: 'spf' }],
+        },
+        dmarc: {
+            aliases: [{ name: 'dmarc' }],
+        },
+        dkim: [
+            {
+                aliases: [{ name: 'icloud-dkim' }],
+            },
+        ],
+    })
 
-    new aws.route53.Record(
-        'dmarc',
-        {
-            name: '_dmarc.bennettp123.com',
-            zoneId: zoneId['bennettp123.com'],
-            type: 'TXT',
-            ttl: 300,
-            records: [
-                'v=DMARC1; p=quarantine; rua=mailto:monitor@bennettp123.com; fo=0; adkim=s; aspf=s; pct=100; rf=afrf; sp=quarantine',
-            ],
-            allowOverwrite: true,
-        },
-        { deleteBeforeReplace: true },
-    )
+    spf = iCloud.spf
+    iCloudProof = iCloud.proofOfDomainOwnership
 
-    new aws.route53.Record(
-        'icloud-dkim',
-        {
-            name: 'sig1._domainkey.bennettp123.com',
-            zoneId: zoneId['bennettp123.com'],
-            type: 'CNAME',
-            ttl: 300,
-            records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
-            allowOverwrite: true,
+    iCloudRecordsForCustomMailDomain({
+        name: 'home.bennettp123.com',
+        zoneId: zoneId['home.bennettp123.com'],
+        proofOfDomainOwnership: 'apple-domain=IhTjpTMY4tZeVzPU',
+        createApexTxt: { aliases: [{ name: 'home-txt' }] },
+        mx: {
+            aliases: [{ name: 'home-mx' }],
         },
-        { deleteBeforeReplace: true },
-    )
-
-    new aws.route53.Record(
-        'home-mx',
-        {
-            name: 'home.bennettp123.com',
-            zoneId: zoneId['home.bennettp123.com'],
-            type: 'MX',
-            ttl: 300,
-            records: ['10 mx01.mail.icloud.com.', '10 mx02.mail.icloud.com.'],
-            allowOverwrite: true,
+        spf: {
+            aliases: [{ name: 'home-spf' }],
         },
-        { deleteBeforeReplace: true },
-    )
-
-    new aws.route53.Record(
-        'home-spf',
-        {
-            name: 'home.bennettp123.com',
-            type: 'SPF',
-            zoneId: zoneId['home.bennettp123.com'],
-            ttl: 300,
-            records: ['v=spf1 include:icloud.com ~all'],
-            allowOverwrite: true,
-        },
-        { deleteBeforeReplace: true },
-    )
-
-    new aws.route53.Record(
-        'home-txt',
-        {
-            name: 'home.bennettp123.com',
-            type: 'TXT',
-            zoneId: zoneId['home.bennettp123.com'],
-            ttl: 300,
-            records: [
-                'apple-domain=IhTjpTMY4tZeVzPU',
-                'v=spf1 include:icloud.com ~all',
-            ],
-            allowOverwrite: true,
-        },
-        { deleteBeforeReplace: true },
-    )
-
-    new aws.route53.Record(
-        'home-dkim',
-        {
-            name: 'sig1._domainkey.home.bennettp123.com',
-            zoneId: zoneId['home.bennettp123.com'],
-            type: 'CNAME',
-            ttl: 300,
-            records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
-            allowOverwrite: true,
-        },
-        { deleteBeforeReplace: true },
-    )
+        dkim: [
+            {
+                // record is for bennettp123.com, not home.bennettp123.com!
+                records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
+                aliases: [{ name: 'home-dkim' }],
+            },
+        ],
+    })
 }
 
 // TODO import all `bennettp123.com` records
@@ -340,18 +434,15 @@ new aws.route53.Record(
         zoneId: zoneId['bennettp123.com'],
         type: 'TXT',
         ttl: 300,
-        records: [
-            'have-i-been-pwned-verification=0bc748e2c70d2194bda98bf27a9c720a',
-            'google-site-verification=cNbbo0Ct0uCSQTQSWILfNa_ekmVwaa_-T8cRWwfVr-8',
-            'adn_verification=bennettp123 https',
-            'apple-domain=J1zntegtGRFkr4xX',
-            ...(mailProvider === 'gmail'
-                ? ['v=spf1 include:_spf.google.com ~all']
-                : []),
-            ...(mailProvider === 'icloud'
-                ? ['v=spf1 include:icloud.com ~all']
-                : []),
-        ],
+        records: pulumi
+            .all([spf?.records, iCloudProof])
+            .apply(([spfRecords, iCloudProof]) => [
+                'have-i-been-pwned-verification=0bc748e2c70d2194bda98bf27a9c720a',
+                'google-site-verification=cNbbo0Ct0uCSQTQSWILfNa_ekmVwaa_-T8cRWwfVr-8',
+                'adn_verification=bennettp123 https',
+                ...(iCloudProof ? [iCloudProof] : []),
+                ...(spfRecords ?? []),
+            ]),
         allowOverwrite: true,
     },
     {
@@ -498,3 +589,10 @@ new aws.route53.Record(
         deleteBeforeReplace: true,
     },
 )
+
+iCloudRecordsForCustomMailDomain({
+    name: 'no-vaccine-for-you.com',
+    zoneId: zoneId['no-vaccine-for-you.com'],
+    proofOfDomainOwnership: 'apple-domain=372JskH6NEceOEkZ',
+    createApexTxt: true,
+})
