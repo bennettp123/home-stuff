@@ -521,19 +521,28 @@ new aws.route53.Record(
     },
 )
 
-new aws.route53.Record(
-    'pihole-aaaa',
-    {
-        name: 'pihole.home.bennettp123.com',
-        type: 'AAAA',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 300,
-        records: ['2404:bf40:e402:20:295d:fce4:c4f6:95ad'],
-    },
-    {
-        deleteBeforeReplace: true,
-    },
-)
+/**
+ * I'm not sure why, but NDP just stops working when you enable some
+ * combination of debian buster, docker, and tailscale inside a libvirt guest.
+ * Let's disable it for now.
+ */
+const enableMiniserverGuestVMIpv6 = false
+
+if (enableMiniserverGuestVMIpv6) {
+    new aws.route53.Record(
+        'pihole-aaaa',
+        {
+            name: 'pihole.home.bennettp123.com',
+            type: 'AAAA',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: ['2404:bf40:e402:20:295d:fce4:c4f6:95ad'],
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+}
 
 new aws.route53.Record(
     'pihole-a',
@@ -549,14 +558,7 @@ new aws.route53.Record(
     },
 )
 
-/**
- * I'm not sure why, but NDP just stops working when you enable some
- * combination of debian buster, docker, and tailscale. Let's disable it
- * for now.
- */
-const enableHomebridgeIpv6 = false
-
-if (enableHomebridgeIpv6) {
+if (enableMiniserverGuestVMIpv6) {
     new aws.route53.Record(
         'homebridge-aaaa',
         {
