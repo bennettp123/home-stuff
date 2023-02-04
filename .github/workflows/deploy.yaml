@@ -64,3 +64,4 @@ jobs:
           cloud-url: s3://home-stuff-bennettp123
           comment-on-pr-number: ${{ inputs.pull-request-number }}
           edit-pr-comment: false
+          color: always

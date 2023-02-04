@@ -40,3 +40,4 @@ jobs:
           cloud-url: s3://home-stuff-bennettp123
           comment-on-pr: true
           edit-pr-comment: true
+          color: always
