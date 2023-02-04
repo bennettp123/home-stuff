@@ -22,9 +22,12 @@ const getZoneId = (name: string) =>
     pulumi.output(aws.route53.getZone({ name })).zoneId
 
 const zoneId = Object.fromEntries(
-    ['bennettp123.com', 'home.bennettp123.com', 'no-vaccine-for-you.com'].map(
-        (name) => [name, getZoneId(name)],
-    ),
+    [
+        'bennettp123.com',
+        'home.bennettp123.com',
+        'no-vaccine-for-you.com',
+        'fukaxe.com',
+    ].map((name) => [name, getZoneId(name)]),
 )
 
 pulumi
@@ -383,22 +386,7 @@ if (mailProvider === 'gmail') {
     // see also TXT record
     const iCloud = iCloudRecordsForCustomMailDomain({
         name: 'bennettp123.com',
-        zoneId: zoneId['bennettp123.com'],
         proofOfDomainOwnership: 'apple-domain=J1zntegtGRFkr4xX',
-        mx: {
-            aliases: [{ name: 'mx' }],
-        },
-        spf: {
-            aliases: [{ name: 'spf' }],
-        },
-        dmarc: {
-            aliases: [{ name: 'dmarc' }],
-        },
-        dkim: [
-            {
-                aliases: [{ name: 'icloud-dkim' }],
-            },
-        ],
     })
 
     spf = iCloud.spf
@@ -406,20 +394,12 @@ if (mailProvider === 'gmail') {
 
     iCloudRecordsForCustomMailDomain({
         name: 'home.bennettp123.com',
-        zoneId: zoneId['home.bennettp123.com'],
         proofOfDomainOwnership: 'apple-domain=IhTjpTMY4tZeVzPU',
         createApexTxt: { aliases: [{ name: 'home-txt' }] },
-        mx: {
-            aliases: [{ name: 'home-mx' }],
-        },
-        spf: {
-            aliases: [{ name: 'home-spf' }],
-        },
         dkim: [
             {
                 // record is for bennettp123.com, not home.bennettp123.com!
                 records: ['sig1.dkim.bennettp123.com.at.icloudmailadmin.com.'],
-                aliases: [{ name: 'home-dkim' }],
             },
         ],
     })
@@ -592,7 +572,12 @@ new aws.route53.Record(
 
 iCloudRecordsForCustomMailDomain({
     name: 'no-vaccine-for-you.com',
-    zoneId: zoneId['no-vaccine-for-you.com'],
+    proofOfDomainOwnership: 'apple-domain=372JskH6NEceOEkZ',
+    createApexTxt: true,
+})
+
+iCloudRecordsForCustomMailDomain({
+    name: 'fukaxe.com',
     proofOfDomainOwnership: 'apple-domain=372JskH6NEceOEkZ',
     createApexTxt: true,
 })
