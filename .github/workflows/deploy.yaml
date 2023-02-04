@@ -57,10 +57,11 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - uses: bennettp123/actions@test/fix/comment-on-pr-number-ignored-unless-event-type-is-pullrequest
+      - uses: bennettp123/actions@benenttp123-colorize
         with:
           command: up
           stack-name: ${{ inputs.stack-name }}
           cloud-url: s3://home-stuff-bennettp123
           comment-on-pr-number: ${{ inputs.pull-request-number }}
           edit-pr-comment: false
+          color: always
