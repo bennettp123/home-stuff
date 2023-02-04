@@ -549,19 +549,28 @@ new aws.route53.Record(
     },
 )
 
-new aws.route53.Record(
-    'homebridge-aaaa',
-    {
-        name: 'homebridge.home.bennettp123.com',
-        type: 'AAAA',
-        zoneId: zoneId['home.bennettp123.com'],
-        ttl: 300,
-        records: ['2404:bf40:e402:33:a1e0:5e87:d630:b1ad'],
-    },
-    {
-        deleteBeforeReplace: true,
-    },
-)
+/**
+ * I'm not sure why, but NDP just stops working when you enable some
+ * combination of debian buster, docker, and tailscale. Let's disable it
+ * for now.
+ */
+const enableHomebridgeIpv6 = false
+
+if (enableHomebridgeIpv6) {
+    new aws.route53.Record(
+        'homebridge-aaaa',
+        {
+            name: 'homebridge.home.bennettp123.com',
+            type: 'AAAA',
+            zoneId: zoneId['home.bennettp123.com'],
+            ttl: 300,
+            records: ['2404:bf40:e402:33:a1e0:5e87:d630:b1ad'],
+        },
+        {
+            deleteBeforeReplace: true,
+        },
+    )
+}
 
 new aws.route53.Record(
     'homebridge-a',
