@@ -522,13 +522,41 @@ new aws.route53.Record(
 )
 
 new aws.route53.Record(
+    'pihole-aaaa',
+    {
+        name: 'pihole.home.bennettp123.com',
+        type: 'AAAA',
+        zoneId: zoneId['home.bennettp123.com'],
+        ttl: 300,
+        records: ['2404:bf40:e402:20:295d:fce4:c4f6:95ad'],
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
+
+new aws.route53.Record(
+    'pihole-a',
+    {
+        name: 'pihole.home.bennettp123.com',
+        type: 'A',
+        zoneId: zoneId['home.bennettp123.com'],
+        ttl: 300,
+        records: ['192.168.20.124'],
+    },
+    {
+        deleteBeforeReplace: true,
+    },
+)
+
+new aws.route53.Record(
     'homebridge-aaaa',
     {
         name: 'homebridge.home.bennettp123.com',
         type: 'AAAA',
         zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
-        records: ['2404:bf40:e402:33:586a:d587:9e99:4252'],
+        records: ['2404:bf40:e402:33:a1e0:5e87:d630:b1ad'],
     },
     {
         deleteBeforeReplace: true,
@@ -542,7 +570,7 @@ new aws.route53.Record(
         type: 'A',
         zoneId: zoneId['home.bennettp123.com'],
         ttl: 300,
-        records: ['192.168.33.127'],
+        records: ['192.168.33.223'],
     },
     {
         deleteBeforeReplace: true,
