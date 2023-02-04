@@ -89,49 +89,56 @@ const iCloudRecordsForCustomMailDomain = (args: {
         },
         { deleteBeforeReplace: true, aliases: args.mx?.aliases },
     ),
-    spf: args.createApexTxt
-        ? { records: args.spf?.records ?? ['v=spf1 include:icloud.com ~all'] }
-        : new aws.route53.Record(
-              `${args.name}-spf`,
-              {
-                  name: args.spf?.name ?? args.name,
-                  zoneId: args.spf?.zoneId ?? args.zoneId ?? zoneId[args.name],
-                  type: args.spf?.type ?? 'SPF',
-                  ttl: 300,
+    spf:
+        args.createApexTxt ?? true
+            ? {
                   records: args.spf?.records ?? [
                       'v=spf1 include:icloud.com ~all',
                   ],
-                  allowOverwrite: args.spf?.allowOverwrite,
-              },
-              { deleteBeforeReplace: true, aliases: args.spf?.aliases },
-          ),
-    txt: args.createApexTxt
-        ? new aws.route53.Record(
-              `${args.name}-txt`,
-              {
-                  name: args.name,
-                  type: 'TXT',
-                  zoneId: args.zoneId ?? zoneId[args.name],
-                  ttl: 300,
-                  records: pulumi
-                      .all([args.spf?.records, args.proofOfDomainOwnership])
-                      .apply(([icloudSpf, proofOfDomainOwnership]) => [
-                          proofOfDomainOwnership,
-                          ...(icloudSpf
-                              ? icloudSpf
-                              : ['v=spf1 include:icloud.com ~all']),
-                      ]),
-                  allowOverwrite: false,
-              },
-              {
-                  deleteBeforeReplace: true,
-                  aliases:
-                      typeof args.createApexTxt !== 'boolean'
-                          ? args.createApexTxt.aliases
-                          : undefined,
-              },
-          )
-        : undefined,
+              }
+            : new aws.route53.Record(
+                  `${args.name}-spf`,
+                  {
+                      name: args.spf?.name ?? args.name,
+                      zoneId:
+                          args.spf?.zoneId ?? args.zoneId ?? zoneId[args.name],
+                      type: args.spf?.type ?? 'SPF',
+                      ttl: 300,
+                      records: args.spf?.records ?? [
+                          'v=spf1 include:icloud.com ~all',
+                      ],
+                      allowOverwrite: args.spf?.allowOverwrite,
+                  },
+                  { deleteBeforeReplace: true, aliases: args.spf?.aliases },
+              ),
+    txt:
+        args.createApexTxt ?? true
+            ? new aws.route53.Record(
+                  `${args.name}-txt`,
+                  {
+                      name: args.name,
+                      type: 'TXT',
+                      zoneId: args.zoneId ?? zoneId[args.name],
+                      ttl: 300,
+                      records: pulumi
+                          .all([args.spf?.records, args.proofOfDomainOwnership])
+                          .apply(([icloudSpf, proofOfDomainOwnership]) => [
+                              proofOfDomainOwnership,
+                              ...(icloudSpf
+                                  ? icloudSpf
+                                  : ['v=spf1 include:icloud.com ~all']),
+                          ]),
+                      allowOverwrite: false,
+                  },
+                  {
+                      deleteBeforeReplace: true,
+                      aliases:
+                          typeof args.createApexTxt !== 'boolean'
+                              ? args.createApexTxt?.aliases
+                              : undefined,
+                  },
+              )
+            : undefined,
     dmarc: new aws.route53.Record(
         `${args.name}-dmarc`,
         {
@@ -387,6 +394,7 @@ if (mailProvider === 'gmail') {
     const iCloud = iCloudRecordsForCustomMailDomain({
         name: 'bennettp123.com',
         proofOfDomainOwnership: 'apple-domain=J1zntegtGRFkr4xX',
+        createApexTxt: false,
     })
 
     spf = iCloud.spf
@@ -395,7 +403,6 @@ if (mailProvider === 'gmail') {
     iCloudRecordsForCustomMailDomain({
         name: 'home.bennettp123.com',
         proofOfDomainOwnership: 'apple-domain=IhTjpTMY4tZeVzPU',
-        createApexTxt: { aliases: [{ name: 'home-txt' }] },
         dkim: [
             {
                 // record is for bennettp123.com, not home.bennettp123.com!
@@ -573,11 +580,9 @@ new aws.route53.Record(
 iCloudRecordsForCustomMailDomain({
     name: 'no-vaccine-for-you.com',
     proofOfDomainOwnership: 'apple-domain=372JskH6NEceOEkZ',
-    createApexTxt: true,
 })
 
 iCloudRecordsForCustomMailDomain({
     name: 'fukaxe.com',
-    proofOfDomainOwnership: 'apple-domain=372JskH6NEceOEkZ',
-    createApexTxt: true,
+    proofOfDomainOwnership: 'apple-domain=wJECGuzkGsTpBbvJ',
 })
