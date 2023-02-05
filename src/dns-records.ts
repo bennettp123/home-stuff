@@ -526,7 +526,7 @@ new aws.route53.Record(
  * combination of debian buster, docker, and tailscale inside a libvirt guest.
  * Let's disable it for now.
  */
-const enableMiniserverGuestVMIpv6 = false
+const enableMiniserverGuestVMIpv6 = true
 
 if (enableMiniserverGuestVMIpv6) {
     new aws.route53.Record(
