@@ -5,7 +5,7 @@ specifiers:
   '@pulumi/aws': ^5.29.0
   '@pulumi/aws-native': ^0.49.0
   '@pulumi/awsx': ^1.0.1
-  '@pulumi/docker': ^3.6.1
+  '@pulumi/docker': ^4.0.0
   '@pulumi/pulumi': ^3.53.1
   '@pulumi/random': ^4.10.0
   '@pulumi/tls': ^4.8.0
@@ -25,7 +25,7 @@ dependencies:
   '@pulumi/aws': 5.29.0
   '@pulumi/aws-native': 0.49.0
   '@pulumi/awsx': 1.0.1
-  '@pulumi/docker': 3.6.1
+  '@pulumi/docker': 4.3.0
   '@pulumi/pulumi': 3.53.1
   '@pulumi/random': 4.10.0
   '@pulumi/tls': 4.8.0
@@ -277,6 +277,16 @@ packages:
 
   /@pulumi/docker/3.6.1:
     resolution: {integrity: sha512-BZME50QkT556v+LvmTXPT8ssB2xxNkp9+msB5xYFEnUnWcdGAx5yUysQw70RJCb+U0GbkJSbxtlgMJgOQf/now==}
+    requiresBuild: true
+    dependencies:
+      '@pulumi/pulumi': 3.53.1
+      semver: 5.7.1
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /@pulumi/docker/4.3.0:
+    resolution: {integrity: sha512-HBKKzOq5khrw7OUaWpDkAEhYIbhaR2O0x+k0dW3JrnxwLEceO1Bvwl9LIPosr49Yu1qL3/uWZQicN1P4sHgzwQ==}
     requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.53.1
