@@ -48,6 +48,7 @@ config:
           secure: v1:Yxr5rJMl/soOpZxV:H8ztjJv87JPvnyZUDklK8Ybz+U64ilR6KpIUGhUb5Si/GLwIU2T1rtzs/b18Kahb4p5swdPv8p0Ypo83dvfL/FSNCw21sYq/zAf4uVuhUTkxSi02M3Z8Fs/EG8Q5FAlBzo6WJfaMRQpmADvVYkdIL2BJJ1t8riOLj33L9pTo+gsmLA==
         ssh_keys:
           - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAO1Tdp+UuSgRQO9krfyqZXSVMt6mSH1RZX2AWxQboxH bennett@MacBook Pro 16
+          - ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBF3L0w1vlPzOt331TraqY0mbiUO1WgAHmgVTb7zTXRH65xcSPha1Qst7293P7vEDQG7fIKZaEQpspnSax2/VDTk= id_ecdsa@secretive.DIGMAC030.local
     sudoers:
       - bennett
   mail:provider: icloud
