@@ -24,7 +24,7 @@
         "@pulumi/pulumi": "^3.53.1",
         "@pulumi/random": "^4.10.0",
         "@pulumi/tls": "^4.8.0",
-        "filenamify": "^5.1.1",
+        "filenamify": "^6.0.0",
         "ipaddr.js": "^2.0.1",
         "netmask": "^2.0.2",
         "openpgp": "~5.5.0"
