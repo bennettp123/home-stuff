@@ -40,7 +40,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v6
         name: Set up typescript cache
         with:
           path: ./.tsbuildinfo
